@@ -1,0 +1,140 @@
+@import "tailwindcss";
+
+/*
+  Eagle Fund Tracker — visual system
+  Juniata College blue + old gold, on warm paper. Restrained and institutional:
+  this is a ledger, not a trading app.
+*/
+
+:root {
+  --canvas: #f4f2ec;
+  --surface: #ffffff;
+  --surface-2: #faf8f3;
+  --line: #e4e0d6;
+  --line-strong: #d3cdbf;
+  --ink: #1b2330;
+  --muted: #5d6472;
+  --faint: #8a8f9c;
+  --brand: #1f3a5f;
+  --brand-hover: #274a78;
+  --brand-contrast: #f4f2ec;
+  --gold: #9a7327;
+  --gold-soft: #f0e4c8;
+  --pos: #1a6b4b;
+  --pos-soft: #dcefe4;
+  --neg: #a5382f;
+  --neg-soft: #f4e0dd;
+  --warn: #8a6a12;
+  --warn-soft: #f5e9c9;
+  --focus: #2f6df0;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --canvas: #10141b;
+    --surface: #171d27;
+    --surface-2: #1d242f;
+    --line: #2b333f;
+    --line-strong: #3a4350;
+    --ink: #e7e9ee;
+    --muted: #9aa3b2;
+    --faint: #737d8c;
+    --brand: #6f9bc9;
+    --brand-hover: #86aed6;
+    --brand-contrast: #0f1620;
+    --gold: #d8b25e;
+    --gold-soft: #3a3320;
+    --pos: #56c08c;
+    --pos-soft: #16301f;
+    --neg: #e0776c;
+    --neg-soft: #331b18;
+    --warn: #d9b978;
+    --warn-soft: #322a15;
+    --focus: #7aa2ff;
+  }
+}
+
+:root[data-theme="dark"] {
+  --canvas: #10141b;
+  --surface: #171d27;
+  --surface-2: #1d242f;
+  --line: #2b333f;
+  --line-strong: #3a4350;
+  --ink: #e7e9ee;
+  --muted: #9aa3b2;
+  --faint: #737d8c;
+  --brand: #6f9bc9;
+  --brand-hover: #86aed6;
+  --brand-contrast: #0f1620;
+  --gold: #d8b25e;
+  --gold-soft: #3a3320;
+  --pos: #56c08c;
+  --pos-soft: #16301f;
+  --neg: #e0776c;
+  --neg-soft: #331b18;
+  --warn: #d9b978;
+  --warn-soft: #322a15;
+  --focus: #7aa2ff;
+}
+
+@theme inline {
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-brand: var(--brand);
+  --color-brand-hover: var(--brand-hover);
+  --color-brand-contrast: var(--brand-contrast);
+  --color-gold: var(--gold);
+  --color-gold-soft: var(--gold-soft);
+  --color-pos: var(--pos);
+  --color-pos-soft: var(--pos-soft);
+  --color-neg: var(--neg);
+  --color-neg-soft: var(--neg-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "SFMono-Regular", monospace;
+}
+
+* {
+  border-color: var(--line);
+}
+
+html {
+  color-scheme: light dark;
+}
+
+body {
+  background: var(--canvas);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--brand) 22%, transparent);
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
