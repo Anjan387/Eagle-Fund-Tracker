@@ -87,6 +87,12 @@ export function Sidebar({
           <p className="text-[11px] capitalize text-faint">
             {user.role === "advisor" ? "Faculty advisor" : "Portfolio manager"}
           </p>
+          <Link
+            href="/account"
+            className="mt-1 inline-block text-[11px] text-muted hover:text-ink hover:underline"
+          >
+            Change password
+          </Link>
         </div>
         <div className="flex items-center justify-between px-1">
           <ThemeToggle />
