@@ -7,7 +7,9 @@
 begin;
 
 -- ---- clean slate (public schema only; never touches auth.*) -----------------
-drop table if exists public.holding_notes  cascade;
+drop table if exists public.holding_notes    cascade;
+drop table if exists public.cash_transactions cascade;
+drop table if exists public.fund_value_history cascade;
 drop table if exists public.trades         cascade;
 drop table if exists public.proposals      cascade;
 drop table if exists public.holdings       cascade;
@@ -121,12 +123,53 @@ create table public.fund_snapshots (
   total_value numeric not null check (total_value > 0)
 );
 
--- ---- fund meta (single editable row of manually-entered figures) -----
+-- ---- cash transactions (append-only ledger; see trigger below) -----------
+-- The fund's cash balance is the running sum of this table, never a typed-in
+-- number. Buys/sells post their own 'trade_buy'/'trade_sell' entries
+-- automatically (see applyTradeToHoldings in lib/store.ts); deposits,
+-- dividends, and fees are logged by the advisor as they happen.
+create table public.cash_transactions (
+  id          uuid primary key default gen_random_uuid(),
+  occurred_on date not null,
+  kind        text not null
+              check (kind in ('deposit','withdrawal','dividend','fee','adjustment','trade_buy','trade_sell')),
+  amount      numeric not null check (amount <> 0), -- signed: + increases cash, - decreases it
+  ticker      text,
+  trade_id    uuid references public.trades(id),
+  memo        text,
+  entered_by  uuid references public.profiles(id),
+  created_at  timestamptz not null default now()
+);
+create index cash_transactions_date_idx on public.cash_transactions(occurred_on desc);
+
+create or replace function public.cash_transactions_are_append_only()
+returns trigger language plpgsql as $$
+begin
+  raise exception 'cash_transactions is append-only: correct a mistake with a new offsetting entry, do not % existing rows', tg_op;
+end;
+$$;
+
+create trigger cash_transactions_no_update
+  before update or delete on public.cash_transactions
+  for each row execute function public.cash_transactions_are_append_only();
+
+-- ---- fund value history (one row per day, written by the daily price-
+--      refresh cron) -- the basis for a rolling trailing-12-month return
+--      once a year of history accrues (see computeReturns in lib/fund.ts) --
+create table public.fund_value_history (
+  date           date primary key,
+  fund_value     numeric not null,
+  invested_value numeric not null,
+  cash_balance   numeric not null,
+  captured_at    timestamptz not null default now()
+);
+
+-- ---- fund meta (a single row; both figures are optional advisor overrides
+--      on top of the automatically computed trailing-return engine) -------
 create table public.fund_meta (
-  id                            integer primary key default 1 check (id = 1),
-  fund_trailing_return_pct      numeric not null default 0,
-  benchmark_trailing_return_pct numeric not null default 0,
-  cash_balance                  numeric not null default 0 check (cash_balance >= 0)
+  id                                      integer primary key default 1 check (id = 1),
+  fund_trailing_return_override_pct      numeric,
+  benchmark_trailing_return_override_pct numeric
 );
 
 -- ============================================================================
@@ -136,26 +179,30 @@ create table public.fund_meta (
 -- a signed-in user can read fund data but cannot change anything, and an
 -- anonymous caller gets nothing.
 -- ============================================================================
-alter table public.profiles       enable row level security;
-alter table public.strategies     enable row level security;
-alter table public.holdings       enable row level security;
-alter table public.trades         enable row level security;
-alter table public.proposals      enable row level security;
-alter table public.holding_notes  enable row level security;
-alter table public.price_cache    enable row level security;
-alter table public.fund_snapshots enable row level security;
-alter table public.fund_meta      enable row level security;
+alter table public.profiles          enable row level security;
+alter table public.strategies        enable row level security;
+alter table public.holdings          enable row level security;
+alter table public.trades            enable row level security;
+alter table public.proposals         enable row level security;
+alter table public.holding_notes     enable row level security;
+alter table public.price_cache       enable row level security;
+alter table public.fund_snapshots    enable row level security;
+alter table public.fund_meta         enable row level security;
+alter table public.cash_transactions enable row level security;
+alter table public.fund_value_history enable row level security;
 
 -- signed-in users may read; nobody may write via the public API
-create policy "read for authenticated" on public.profiles       for select to authenticated using (true);
-create policy "read for authenticated" on public.strategies     for select to authenticated using (true);
-create policy "read for authenticated" on public.holdings       for select to authenticated using (true);
-create policy "read for authenticated" on public.trades         for select to authenticated using (true);
-create policy "read for authenticated" on public.proposals      for select to authenticated using (true);
-create policy "read for authenticated" on public.holding_notes  for select to authenticated using (true);
-create policy "read for authenticated" on public.price_cache    for select to authenticated using (true);
-create policy "read for authenticated" on public.fund_snapshots for select to authenticated using (true);
-create policy "read for authenticated" on public.fund_meta      for select to authenticated using (true);
+create policy "read for authenticated" on public.profiles          for select to authenticated using (true);
+create policy "read for authenticated" on public.strategies        for select to authenticated using (true);
+create policy "read for authenticated" on public.holdings          for select to authenticated using (true);
+create policy "read for authenticated" on public.trades            for select to authenticated using (true);
+create policy "read for authenticated" on public.proposals         for select to authenticated using (true);
+create policy "read for authenticated" on public.holding_notes     for select to authenticated using (true);
+create policy "read for authenticated" on public.price_cache       for select to authenticated using (true);
+create policy "read for authenticated" on public.fund_snapshots    for select to authenticated using (true);
+create policy "read for authenticated" on public.fund_meta         for select to authenticated using (true);
+create policy "read for authenticated" on public.cash_transactions for select to authenticated using (true);
+create policy "read for authenticated" on public.fund_value_history for select to authenticated using (true);
 
 -- ============================================================================
 -- Seed data
@@ -167,12 +214,19 @@ insert into public.strategies (id, name, target_min_pct, target_max_pct) values
   ('st-momentum',  'Momentum',               22, 28),
   ('st-defensive', 'Defensive',              15, 20);
 
--- cash_balance is actual un-invested cash sitting in the Schwab accounts'
--- sweep funds (no cash at Vanguard). It is NOT the $30k that was moved into
--- VGSH as a short-term parking spot for cash — that shows up as the VGSH
--- holding below, so counting it again here would double-count it.
-insert into public.fund_meta (id, fund_trailing_return_pct, benchmark_trailing_return_pct, cash_balance)
-values (1, 27.6, 23.34, 1138);
+-- Both trailing-return figures are computed automatically (see
+-- computeReturns in lib/fund.ts); this row just holds the two optional
+-- overrides, both starting unset.
+insert into public.fund_meta (id) values (1);
+
+-- Opening cash balance: actual un-invested cash sitting in the Schwab
+-- accounts' sweep funds (no cash at Vanguard). This is NOT the $30k that was
+-- moved into VGSH as a short-term parking spot for cash — that shows up as
+-- the VGSH holding below, so counting it again here would double-count it.
+-- Everything from here forward is automatic: buy/sell trades post their own
+-- cash_transactions entries (see applyTradeToHoldings).
+insert into public.cash_transactions (occurred_on, kind, amount, memo) values
+  (current_date, 'adjustment', 1138, 'Opening balance — reconciled against the Schwab statements');
 
 insert into public.fund_snapshots (year, total_value) values
   (2020, 209382),

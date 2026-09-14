@@ -4,7 +4,15 @@ import { revalidatePath } from "next/cache";
 import { requireAdvisor } from "@/lib/auth";
 import { refreshStale } from "@/lib/prices";
 import { trackedTickers } from "@/lib/tickers";
-import { createUser, getUserByEmail, setMeta, setUserActive, upsertSnapshot } from "@/lib/store";
+import {
+  addCashTransaction,
+  createUser,
+  getUserByEmail,
+  setMeta,
+  setUserActive,
+  upsertSnapshot,
+} from "@/lib/store";
+import type { CashTransactionKind } from "@/lib/types";
 
 export interface AdminFormState {
   error?: string;
@@ -61,24 +69,71 @@ export async function saveSnapshot(
 
 export async function refreshPricesNow(): Promise<void> {
   await requireAdvisor();
-  await refreshStale(await trackedTickers(), 6);
+  await refreshStale(await trackedTickers(), 7);
   revalidatePath("/overview");
   revalidatePath("/holdings");
   revalidatePath("/admin");
 }
 
-export async function saveReturns(
+// Both trailing-return figures are computed automatically (lib/fund.ts). An
+// empty field clears the override and goes back to the computed value; a
+// number in it overrides that value until cleared.
+export async function saveReturnOverrides(
   _prev: AdminFormState,
   formData: FormData,
 ): Promise<AdminFormState> {
   await requireAdvisor();
-  const fundTrailingReturnPct = Number(formData.get("fundTrailingReturnPct"));
-  const benchmarkTrailingReturnPct = Number(formData.get("benchmarkTrailingReturnPct"));
-  const cashBalance = Number(formData.get("cashBalance"));
-  if (![fundTrailingReturnPct, benchmarkTrailingReturnPct, cashBalance].every(Number.isFinite))
-    return { error: "All three fields must be numbers." };
-  if (cashBalance < 0) return { error: "Cash balance cannot be negative." };
-  await setMeta({ fundTrailingReturnPct, benchmarkTrailingReturnPct, cashBalance });
+  const fundRaw = String(formData.get("fundTrailingReturnOverridePct") ?? "").trim();
+  const benchmarkRaw = String(formData.get("benchmarkTrailingReturnOverridePct") ?? "").trim();
+
+  const fundTrailingReturnOverridePct = fundRaw === "" ? null : Number(fundRaw);
+  const benchmarkTrailingReturnOverridePct = benchmarkRaw === "" ? null : Number(benchmarkRaw);
+  if (
+    (fundTrailingReturnOverridePct !== null && !Number.isFinite(fundTrailingReturnOverridePct)) ||
+    (benchmarkTrailingReturnOverridePct !== null && !Number.isFinite(benchmarkTrailingReturnOverridePct))
+  ) {
+    return { error: "Overrides must be numbers, or left blank to clear them." };
+  }
+
+  await setMeta({ fundTrailingReturnOverridePct, benchmarkTrailingReturnOverridePct });
+  revalidatePath("/admin");
+  revalidatePath("/overview");
+  return { ok: true };
+}
+
+const CASH_SIGN: Record<CashTransactionKind, 1 | -1> = {
+  deposit: 1,
+  dividend: 1,
+  withdrawal: -1,
+  fee: -1,
+  adjustment: 1, // the advisor types the signed amount directly for this one
+  trade_buy: -1,
+  trade_sell: 1,
+};
+
+export async function addCashEvent(
+  _prev: AdminFormState,
+  formData: FormData,
+): Promise<AdminFormState> {
+  const advisor = await requireAdvisor();
+  const kind = String(formData.get("kind") ?? "") as CashTransactionKind;
+  const amountInput = Number(formData.get("amount"));
+  const occurredOn = String(formData.get("occurredOn") ?? "");
+  const memo = String(formData.get("memo") ?? "").trim();
+
+  if (!["deposit", "withdrawal", "dividend", "fee", "adjustment"].includes(kind))
+    return { error: "Choose a valid event type." };
+  if (!Number.isFinite(amountInput) || amountInput === 0)
+    return { error: "Enter a non-zero dollar amount." };
+  if (kind !== "adjustment" && amountInput < 0)
+    return { error: "Enter a positive amount — the event type already sets the direction." };
+  if (!occurredOn) return { error: "Date is required." };
+
+  // Every kind except "adjustment" has a fixed direction, so the advisor just
+  // types a positive amount; "adjustment" is a free-form correcting entry and
+  // can go either way, same as an offsetting trade entry would.
+  const amount = kind === "adjustment" ? amountInput : amountInput * CASH_SIGN[kind];
+  await addCashTransaction({ occurredOn, kind, amount, memo: memo || undefined, enteredBy: advisor.id });
   revalidatePath("/admin");
   revalidatePath("/overview");
   return { ok: true };

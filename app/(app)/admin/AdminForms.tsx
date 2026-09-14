@@ -2,8 +2,9 @@
 
 import { useActionState, useEffect, useRef } from "react";
 import {
+  addCashEvent,
   addPmAccount,
-  saveReturns,
+  saveReturnOverrides,
   saveSnapshot,
   type AdminFormState,
 } from "@/app/actions/admin";
@@ -68,52 +69,119 @@ export function SnapshotForm() {
 
 export function ReturnsForm({
   fundTrailingReturnPct,
+  fundReturnBasis,
+  fundOverridePct,
   benchmarkTrailingReturnPct,
-  cashBalance,
+  benchmarkReturnBasis,
+  benchmarkOverridePct,
 }: {
   fundTrailingReturnPct: number;
+  fundReturnBasis: string;
+  fundOverridePct: number | null;
   benchmarkTrailingReturnPct: number;
-  cashBalance: number;
+  benchmarkReturnBasis: string;
+  benchmarkOverridePct: number | null;
 }) {
-  const [state, action, pending] = useActionState(saveReturns, initial);
+  const [state, action, pending] = useActionState(saveReturnOverrides, initial);
+  const basisLabel: Record<string, string> = {
+    "trailing-12mo": "computed — true trailing 12 months",
+    "since-rebuild": "computed — since the April 2026 rebuild (not a year of history yet)",
+    override: "advisor override",
+  };
   return (
-    <form action={action} className="grid gap-3 px-5 py-5 sm:grid-cols-3 sm:items-end">
+    <form action={action} className="grid gap-3 px-5 py-5 sm:grid-cols-2 sm:items-end">
       <label className="flex flex-col gap-1.5">
-        <span className={labelClass}>Fund trailing 12-mo return (%)</span>
+        <span className={labelClass}>
+          Fund trailing return: <span className="tnum text-ink">{fundTrailingReturnPct.toFixed(2)}%</span>{" "}
+          <span className="font-normal normal-case text-faint">({basisLabel[fundReturnBasis]})</span>
+        </span>
         <input
-          name="fundTrailingReturnPct"
+          name="fundTrailingReturnOverridePct"
           type="number"
           step="0.01"
-          defaultValue={fundTrailingReturnPct}
+          defaultValue={fundOverridePct ?? ""}
+          placeholder="Override (leave blank to use the computed value)"
           className={inputClass}
         />
       </label>
       <label className="flex flex-col gap-1.5">
-        <span className={labelClass}>Benchmark trailing return (%)</span>
+        <span className={labelClass}>
+          Benchmark (80/20 ACWI/AGG): <span className="tnum text-ink">{benchmarkTrailingReturnPct.toFixed(2)}%</span>{" "}
+          <span className="font-normal normal-case text-faint">({basisLabel[benchmarkReturnBasis]})</span>
+        </span>
         <input
-          name="benchmarkTrailingReturnPct"
+          name="benchmarkTrailingReturnOverridePct"
           type="number"
           step="0.01"
-          defaultValue={benchmarkTrailingReturnPct}
-          className={inputClass}
-        />
-      </label>
-      <label className="flex flex-col gap-1.5">
-        <span className={labelClass}>Cash balance (USD)</span>
-        <input
-          name="cashBalance"
-          type="number"
-          step="1"
-          defaultValue={cashBalance}
+          defaultValue={benchmarkOverridePct ?? ""}
+          placeholder="Override (leave blank to use the computed value)"
           className={inputClass}
         />
       </label>
       <SubmitButton pending={pending} variant="ghost">
-        Save figures
+        Save overrides
       </SubmitButton>
-      <div className="sm:col-span-3 flex flex-col gap-2">
+      <div className="sm:col-span-2 flex flex-col gap-2">
         <FieldError>{state.error}</FieldError>
-        {state.ok ? <FormOk>Overview figures updated.</FormOk> : null}
+        {state.ok ? <FormOk>Saved. Overview now reflects these overrides (blank = computed value).</FormOk> : null}
+      </div>
+    </form>
+  );
+}
+
+const CASH_KINDS = [
+  { value: "deposit", label: "Deposit" },
+  { value: "withdrawal", label: "Withdrawal" },
+  { value: "dividend", label: "Dividend received" },
+  { value: "fee", label: "Fee" },
+  { value: "adjustment", label: "Adjustment (correct a mistake)" },
+] as const;
+
+export function CashEventForm() {
+  const [state, action, pending] = useActionState(addCashEvent, initial);
+  const ref = useRef<HTMLFormElement>(null);
+  useEffect(() => {
+    if (state.ok) ref.current?.reset();
+  }, [state.ok]);
+
+  return (
+    <form
+      ref={ref}
+      action={action}
+      className="grid gap-3 px-5 py-5 sm:grid-cols-[1fr_1fr_1fr_1fr_auto] sm:items-end"
+    >
+      <label className="flex flex-col gap-1.5">
+        <span className={labelClass}>Type</span>
+        <select name="kind" required defaultValue="deposit" className={inputClass}>
+          {CASH_KINDS.map((k) => (
+            <option key={k.value} value={k.value}>
+              {k.label}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="flex flex-col gap-1.5">
+        <span className={labelClass}>Amount (USD)</span>
+        <input name="amount" type="number" step="0.01" required className={inputClass} />
+      </label>
+      <label className="flex flex-col gap-1.5">
+        <span className={labelClass}>Date</span>
+        <input
+          name="occurredOn"
+          type="date"
+          required
+          defaultValue={new Date().toISOString().slice(0, 10)}
+          className={inputClass}
+        />
+      </label>
+      <label className="flex flex-col gap-1.5">
+        <span className={labelClass}>Memo</span>
+        <input name="memo" className={inputClass} placeholder="Optional" />
+      </label>
+      <SubmitButton pending={pending}>Log event</SubmitButton>
+      <div className="sm:col-span-5 flex flex-col gap-2">
+        <FieldError>{state.error}</FieldError>
+        {state.ok ? <FormOk>Cash event recorded.</FormOk> : null}
       </div>
     </form>
   );

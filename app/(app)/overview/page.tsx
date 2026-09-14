@@ -4,6 +4,12 @@ import { AllocationBars } from "@/components/AllocationBars";
 import { AumChart } from "@/components/charts/AumChart";
 import { Card, CardHeader, PageHeader, StatTile } from "@/components/ui";
 
+const RETURN_BASIS_LABEL: Record<string, string> = {
+  "trailing-12mo": "trailing 12mo",
+  "since-rebuild": "since Apr 2026 rebuild",
+  override: "advisor override",
+};
+
 export default async function OverviewPage() {
   const o = await getFundOverview();
 
@@ -11,7 +17,7 @@ export default async function OverviewPage() {
     <div className="flex flex-col gap-8">
       <PageHeader
         title="Overview"
-        description="Live valuation of the shadow ledger against the fund's 80/20 ACWI/AGG benchmark. Trailing-return figures are entered manually from the annual review."
+        description="Live valuation of the shadow ledger against the fund's 80/20 ACWI/AGG benchmark. Holdings, cash, trailing returns, and the benchmark all recalculate automatically — see Admin for the basis of each and to set a correction if one is ever needed."
       />
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -24,11 +30,12 @@ export default async function OverviewPage() {
           label="Trailing 12-mo return"
           value={signedPct(o.fundTrailingReturnPct)}
           tone={o.fundTrailingReturnPct >= 0 ? "pos" : "neg"}
+          sub={RETURN_BASIS_LABEL[o.fundReturnBasis]}
         />
         <StatTile
           label="Benchmark (80/20)"
           value={signedPct(o.benchmarkTrailingReturnPct)}
-          sub="ACWI / AGG"
+          sub={`ACWI / AGG · ${RETURN_BASIS_LABEL[o.benchmarkReturnBasis]}`}
         />
         <StatTile
           label="Outperformance"

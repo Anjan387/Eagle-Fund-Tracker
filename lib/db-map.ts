@@ -1,6 +1,7 @@
 // Maps snake_case Supabase rows to the camelCase domain types the app uses.
 
 import type {
+  CashTransaction,
   FundSnapshot,
   Holding,
   HoldingNote,
@@ -82,4 +83,16 @@ export const rowToNote = (r: Row): HoldingNote => ({
 export const rowToSnapshot = (r: Row): FundSnapshot => ({
   year: Number(r.year),
   totalValue: Number(r.total_value),
+});
+
+export const rowToCashTransaction = (r: Row): CashTransaction => ({
+  id: r.id,
+  occurredOn: date(r.occurred_on),
+  kind: r.kind,
+  amount: Number(r.amount),
+  ticker: r.ticker ?? undefined,
+  tradeId: r.trade_id ?? undefined,
+  memo: r.memo ?? undefined,
+  enteredBy: r.entered_by ?? undefined,
+  createdAt: date(r.created_at),
 });

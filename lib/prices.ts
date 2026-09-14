@@ -244,6 +244,62 @@ export async function getHistory(ticker: string, days = 275): Promise<PricePoint
   return series.slice(-days);
 }
 
+/**
+ * Looks up (and permanently caches) a single historical close on or shortly
+ * after `date`. Used by the benchmark return engine to price the 80/20
+ * ACWI/AGG blend as of a fixed starting date (e.g. the April 2026 rebuild)
+ * that predates the app's own price cache. Costs one API credit, once ever,
+ * per ticker/date pair — every call after the first is a cache hit.
+ */
+export async function getHistoricalClose(ticker: string, date: string): Promise<number | null> {
+  const t = normalize(ticker);
+
+  const { data: exact } = await admin()
+    .from("price_cache")
+    .select("close")
+    .eq("ticker", t)
+    .eq("date", date)
+    .maybeSingle();
+  if (exact) return Number(exact.close);
+
+  // Nearest cached close on/after the date, in case it's already covered by
+  // the rolling cache (handles weekends/holidays landing on `date`).
+  const { data: nearby } = await admin()
+    .from("price_cache")
+    .select("close")
+    .eq("ticker", t)
+    .gte("date", date)
+    .order("date")
+    .limit(1)
+    .maybeSingle();
+  if (nearby) return Number(nearby.close);
+
+  if (!KEY) return null;
+  try {
+    const end = new Date(date);
+    end.setDate(end.getDate() + 6);
+    const res = await fetch(
+      `${API}/time_series?symbol=${t}&interval=1day&start_date=${date}&end_date=${end
+        .toISOString()
+        .slice(0, 10)}&apikey=${KEY}`,
+      { cache: "no-store" },
+    );
+    const j = (await res.json()) as {
+      status?: string;
+      values?: { datetime: string; close: string }[];
+    };
+    if (j.status !== "ok" || !j.values?.length) return null;
+    const rows = j.values
+      .map((v) => ({ ticker: t, date: v.datetime.slice(0, 10), close: Number(v.close) }))
+      .filter((r) => Number.isFinite(r.close))
+      .sort((a, b) => a.date.localeCompare(b.date));
+    await writeCache(rows);
+    return rows[0]?.close ?? null;
+  } catch {
+    return null;
+  }
+}
+
 // name lookup for tickers not in KNOWN (cached for the life of the process)
 const nameCache = new Map<string, string>();
 async function lookupName(ticker: string): Promise<string> {

@@ -87,6 +87,36 @@ export interface FundSnapshot {
   totalValue: number;
 }
 
+export type CashTransactionKind =
+  | "deposit"
+  | "withdrawal"
+  | "dividend"
+  | "fee"
+  | "adjustment"
+  | "trade_buy"
+  | "trade_sell";
+
+export interface CashTransaction {
+  id: string;
+  occurredOn: string; // ISO date
+  kind: CashTransactionKind;
+  amount: number; // signed: positive increases cash, negative decreases it
+  ticker?: string;
+  tradeId?: string;
+  memo?: string;
+  enteredBy?: string;
+  createdAt: string;
+}
+
+// One row per day, written by the daily price-refresh cron. The basis for a
+// computed rolling trailing-12-month return once a year of history accrues.
+export interface FundValueSnapshot {
+  date: string; // ISO date
+  fundValue: number;
+  investedValue: number;
+  cashBalance: number;
+}
+
 export interface PriceQuote {
   ticker: string;
   price: number;

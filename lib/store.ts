@@ -7,6 +7,7 @@
 import "server-only";
 import { admin } from "./supabase/admin";
 import {
+  rowToCashTransaction,
   rowToHolding,
   rowToNote,
   rowToProposal,
@@ -15,7 +16,7 @@ import {
   rowToTrade,
   rowToUser,
 } from "./db-map";
-import type { Proposal, Trade, User } from "./types";
+import type { CashTransaction, CashTransactionKind, FundValueSnapshot, Proposal, Trade, User } from "./types";
 
 function must<T>(data: T | null, error: { message: string } | null, what: string): T {
   if (error) throw new Error(`${what}: ${error.message}`);
@@ -99,14 +100,92 @@ export async function getSnapshots() {
   return must(data, error, "getSnapshots").map(rowToSnapshot);
 }
 
+// The trailing-return figures are computed automatically (see lib/fund.ts);
+// these two columns are an optional advisor override for when the computed
+// number is wrong (a bad price, a data gap) and needs a manual correction
+// without a code deploy. null means "use the computed value."
 export async function getMeta() {
   const { data, error } = await admin().from("fund_meta").select("*").eq("id", 1).maybeSingle();
   const row = must(data, error, "getMeta");
   return {
-    fundTrailingReturnPct: Number(row.fund_trailing_return_pct),
-    benchmarkTrailingReturnPct: Number(row.benchmark_trailing_return_pct),
-    cashBalance: Number(row.cash_balance),
+    fundTrailingReturnOverridePct:
+      row.fund_trailing_return_override_pct == null ? null : Number(row.fund_trailing_return_override_pct),
+    benchmarkTrailingReturnOverridePct:
+      row.benchmark_trailing_return_override_pct == null
+        ? null
+        : Number(row.benchmark_trailing_return_override_pct),
   };
+}
+
+// ---- cash ledger ----------------------------------------------------------
+// Cash is never a single overridable number: it's the running sum of an
+// append-only ledger, the same "fix a mistake with a new offsetting entry"
+// model already used for trades. Buys/sells post their own entries
+// automatically (see applyTradeToHoldings); deposits, dividends, and fees are
+// logged by the advisor as they happen via addCashTransaction.
+
+export async function getCashTransactions(): Promise<CashTransaction[]> {
+  const { data, error } = await admin()
+    .from("cash_transactions")
+    .select("*")
+    .order("occurred_on", { ascending: false })
+    .order("created_at", { ascending: false });
+  return must(data, error, "getCashTransactions").map(rowToCashTransaction);
+}
+
+export async function getCashBalance(): Promise<number> {
+  const { data, error } = await admin().from("cash_transactions").select("amount");
+  return must(data, error, "getCashBalance").reduce((sum, r) => sum + Number(r.amount), 0);
+}
+
+export async function addCashTransaction(input: {
+  occurredOn: string;
+  kind: CashTransactionKind;
+  amount: number;
+  memo?: string;
+  ticker?: string;
+  tradeId?: string;
+  enteredBy?: string;
+}): Promise<void> {
+  const { error } = await admin().from("cash_transactions").insert({
+    occurred_on: input.occurredOn,
+    kind: input.kind,
+    amount: input.amount,
+    memo: input.memo ?? null,
+    ticker: input.ticker ?? null,
+    trade_id: input.tradeId ?? null,
+    entered_by: input.enteredBy ?? null,
+  });
+  if (error) throw new Error(`addCashTransaction: ${error.message}`);
+}
+
+// ---- daily fund value history ---------------------------------------------
+// One row per day, written by the price-refresh cron (app/api/refresh-prices).
+// Once ~a year of these accrue, lib/fund.ts can compute a true rolling
+// trailing-12-month return instead of the "since rebuild" stand-in.
+
+export async function getFundValueHistory(): Promise<FundValueSnapshot[]> {
+  const { data, error } = await admin().from("fund_value_history").select("*").order("date");
+  return must(data, error, "getFundValueHistory").map((r) => ({
+    date: String(r.date).slice(0, 10),
+    fundValue: Number(r.fund_value),
+    investedValue: Number(r.invested_value),
+    cashBalance: Number(r.cash_balance),
+  }));
+}
+
+export async function upsertFundValueSnapshot(snapshot: FundValueSnapshot): Promise<void> {
+  await admin()
+    .from("fund_value_history")
+    .upsert(
+      {
+        date: snapshot.date,
+        fund_value: snapshot.fundValue,
+        invested_value: snapshot.investedValue,
+        cash_balance: snapshot.cashBalance,
+      },
+      { onConflict: "date" },
+    );
 }
 
 // ---- writes -------------------------------------------------------------
@@ -132,6 +211,14 @@ export async function addTrade(input: Omit<Trade, "id">): Promise<Trade> {
 
   const trade = rowToTrade(must(tradeRow, error, "addTrade"));
   await applyTradeToHoldings(trade);
+  await addCashTransaction({
+    occurredOn: trade.tradeDate,
+    kind: trade.action === "buy" ? "trade_buy" : "trade_sell",
+    amount: trade.action === "buy" ? -(trade.shares * trade.price) : trade.shares * trade.price,
+    ticker: trade.ticker,
+    tradeId: trade.id,
+    enteredBy: trade.enteredBy || undefined,
+  });
   return trade;
 }
 
@@ -321,15 +408,14 @@ export async function upsertSnapshot(year: number, totalValue: number) {
 }
 
 export async function setMeta(meta: {
-  fundTrailingReturnPct?: number;
-  benchmarkTrailingReturnPct?: number;
-  cashBalance?: number;
+  fundTrailingReturnOverridePct?: number | null;
+  benchmarkTrailingReturnOverridePct?: number | null;
 }) {
-  const patch: Record<string, number> = {};
-  if (meta.fundTrailingReturnPct !== undefined) patch.fund_trailing_return_pct = meta.fundTrailingReturnPct;
-  if (meta.benchmarkTrailingReturnPct !== undefined)
-    patch.benchmark_trailing_return_pct = meta.benchmarkTrailingReturnPct;
-  if (meta.cashBalance !== undefined) patch.cash_balance = meta.cashBalance;
+  const patch: Record<string, number | null> = {};
+  if (meta.fundTrailingReturnOverridePct !== undefined)
+    patch.fund_trailing_return_override_pct = meta.fundTrailingReturnOverridePct;
+  if (meta.benchmarkTrailingReturnOverridePct !== undefined)
+    patch.benchmark_trailing_return_override_pct = meta.benchmarkTrailingReturnOverridePct;
   await admin().from("fund_meta").update(patch).eq("id", 1);
 }
 
