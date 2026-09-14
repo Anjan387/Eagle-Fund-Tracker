@@ -167,8 +167,12 @@ insert into public.strategies (id, name, target_min_pct, target_max_pct) values
   ('st-momentum',  'Momentum',               22, 28),
   ('st-defensive', 'Defensive',              15, 20);
 
+-- cash_balance is actual un-invested cash sitting in the Schwab accounts'
+-- sweep funds (no cash at Vanguard). It is NOT the $30k that was moved into
+-- VGSH as a short-term parking spot for cash — that shows up as the VGSH
+-- holding below, so counting it again here would double-count it.
 insert into public.fund_meta (id, fund_trailing_return_pct, benchmark_trailing_return_pct, cash_balance)
-values (1, 27.6, 23.34, 30000);
+values (1, 27.6, 23.34, 1138);
 
 insert into public.fund_snapshots (year, total_value) values
   (2020, 209382),
