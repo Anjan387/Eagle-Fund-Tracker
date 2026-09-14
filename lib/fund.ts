@@ -192,6 +192,23 @@ async function computeReturns(
   return { fundTrailingReturnPct, fundReturnBasis, benchmarkTrailingReturnPct, benchmarkReturnBasis };
 }
 
+/**
+ * Just the fund-value components, with none of the trailing-return/benchmark
+ * work getFundOverview does. Used by the price-refresh cron to write today's
+ * fund_value_history row cheaply — that route already spends most of its
+ * ~60s budget on Twelve Data's rate limit, with no room left for the extra
+ * (and here, unneeded) historical-price lookups computeReturns makes.
+ */
+export async function getCurrentFundValue(): Promise<{
+  fundValue: number;
+  investedValue: number;
+  cashBalance: number;
+}> {
+  const [rows, cashBalance] = await Promise.all([getHoldingRows(), getCashBalance()]);
+  const investedValue = rows.reduce((s, r) => s + r.marketValue, 0);
+  return { fundValue: investedValue + cashBalance, investedValue, cashBalance };
+}
+
 export async function getFundOverview(): Promise<FundOverview> {
   const [rows, strategies, meta, snapshots, cashBalance, history] = await Promise.all([
     getHoldingRows(),

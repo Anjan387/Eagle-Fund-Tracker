@@ -103,10 +103,12 @@ page loads normally hit the database, not the API. The free tier is **8
 credits/minute, 800/day**, and Vercel's Hobby plan only allows a daily cron —
 so refreshing is once a day and incremental, not real-time:
 
-- **`GET /api/refresh-prices`** refreshes the 7 most-stale tracked tickers
+- **`GET /api/refresh-prices`** refreshes the 5 most-stale tracked tickers
   (holdings + watchlist) and records that day's fund value in
-  `fund_value_history`. Authenticated by `CRON_SECRET`
-  (`Authorization: Bearer …` or `?key=…`).
+  `fund_value_history`. Kept below the manual button's 7 deliberately — the
+  8-credits/minute pacing already spends most of the route's 60s budget, and
+  the fund_value_history write needs headroom left after it. Authenticated by
+  `CRON_SECRET` (`Authorization: Bearer …` or `?key=…`).
 - [`vercel.json`](vercel.json) runs it once a day. Run it a few times after
   first deploy to populate everything, or use **Refresh prices now** on the
   Admin page. Going faster than daily needs a paid Twelve Data plan and
