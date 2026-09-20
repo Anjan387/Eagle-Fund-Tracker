@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { Card } from "@/components/ui";
+import { EagleBackground } from "@/components/EagleBackground";
 import { LoginForm } from "./LoginForm";
 
 export default async function LoginPage() {
@@ -8,6 +9,7 @@ export default async function LoginPage() {
 
   return (
     <div className="grid min-h-full place-items-center px-4 py-10">
+      <EagleBackground />
       <div className="w-full max-w-sm">
         <div className="mb-6 flex items-center gap-3">
           <span className="grid h-9 w-9 place-items-center rounded-md bg-brand text-sm font-bold text-brand-contrast">
