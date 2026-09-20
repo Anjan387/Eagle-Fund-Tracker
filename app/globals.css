@@ -146,3 +146,32 @@ body {
 .eagle-drift {
   animation: eagle-drift 20s ease-in-out infinite;
 }
+
+@keyframes chart-draw {
+  from { stroke-dasharray: 1400; stroke-dashoffset: 1400; }
+  to { stroke-dasharray: 1400; stroke-dashoffset: 0; }
+}
+.chart-draw {
+  animation: chart-draw 2.4s 0.3s ease-out both;
+}
+
+@keyframes chart-pulse {
+  0%, 100% { opacity: 0.7; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.4); }
+}
+.chart-pulse {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: chart-pulse 2.6s ease-in-out infinite;
+}
+
+.ticker-tape {
+  overflow: hidden;
+}
+@keyframes ticker-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.ticker-track {
+  animation: ticker-scroll 48s linear infinite;
+}
