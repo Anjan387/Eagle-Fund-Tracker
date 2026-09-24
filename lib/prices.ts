@@ -64,39 +64,6 @@ export function isKnownTicker(ticker: string): boolean {
   return normalize(ticker) in KNOWN;
 }
 
-// --- synthetic fallback (deterministic) — only used if the API and cache both fail
-function hash(s: string): number {
-  let h = 2166136261;
-  for (let i = 0; i < s.length; i++) {
-    h ^= s.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  return h >>> 0;
-}
-function mulberry32(a: number) {
-  return () => {
-    a |= 0;
-    a = (a + 0x6d2b79f5) | 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-function syntheticSeries(ticker: string, days = 300): PricePoint[] {
-  const rnd = mulberry32(hash(normalize(ticker)));
-  const base = 20 + rnd() * 400;
-  let price = base;
-  const end = new Date();
-  const out: PricePoint[] = [];
-  for (let i = days - 1; i >= 0; i--) {
-    price = Math.max(base * 0.3, price * (1 + (rnd() - 0.5) * 0.03));
-    const d = new Date(end);
-    d.setDate(d.getDate() - i);
-    out.push({ date: d.toISOString().slice(0, 10), close: Number(price.toFixed(2)) });
-  }
-  return out;
-}
-
 // --- cache helpers
 async function readCache(tickers: string[]): Promise<Map<string, PricePoint[]>> {
   const { data } = await admin()
@@ -236,7 +203,11 @@ export async function getSeries(ticker: string): Promise<PricePoint[]> {
   const after = (await readCache([t])).get(t);
   if (after && after.length >= 30) return after;
 
-  return cached && cached.length ? cached : syntheticSeries(t);
+  // Genuinely no data available (bad ticker, or the API and cache both came
+  // up empty) — return nothing rather than inventing a plausible-looking
+  // series. A fabricated chart for a real holding would be a much worse bug
+  // than an honest "no data" state for a bogus search.
+  return cached && cached.length ? cached : [];
 }
 
 export async function getHistory(ticker: string, days = 275): Promise<PricePoint[]> {
@@ -341,9 +312,15 @@ function quoteFromSeries(ticker: string, series: PricePoint[], name: string, met
   };
 }
 
-export async function getQuote(ticker: string): Promise<PriceQuote> {
+// null means the ticker genuinely couldn't be found — no cached or fetchable
+// data at all. Used for the ad-hoc "look up any ticker" research page; the
+// batched getQuotes below (fund holdings + the watchlist, always real
+// tickers) keeps its old all-zeros-on-no-data shape since a caller there
+// isn't expecting a lookup to fail.
+export async function getQuote(ticker: string): Promise<PriceQuote | null> {
   const t = normalize(ticker);
   const [series, name] = await Promise.all([getSeries(t), lookupName(t)]);
+  if (series.length === 0) return null;
   return quoteFromSeries(t, series, name, KNOWN[t]);
 }
 

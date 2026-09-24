@@ -3,7 +3,7 @@ import { requireUser } from "@/lib/auth";
 import { getHistory, getNews, getQuote, isKnownTicker } from "@/lib/prices";
 import { compactMoney, money2, relativeTime, signedPct } from "@/lib/format";
 import { getHoldings, getStrategies } from "@/lib/store";
-import { Badge, Card, CardHeader, PageHeader } from "@/components/ui";
+import { Badge, Card, CardHeader, EmptyState, PageHeader } from "@/components/ui";
 import { PriceChart } from "@/components/charts/PriceChart";
 import { StockSearch } from "@/components/StockSearch";
 
@@ -12,13 +12,37 @@ export default async function TickerPage({ params }: PageProps<"/research/[ticke
   const { ticker: raw } = await params;
   const ticker = raw.toUpperCase();
 
-  const [quote, history, news, holdings, strategies] = await Promise.all([
+  // Fetch the quote first: if the ticker doesn't actually exist, there's no
+  // point spending a news-API credit or rendering a chart for it.
+  const [quote, holdings, strategies] = await Promise.all([
     getQuote(ticker),
-    getHistory(ticker),
-    getNews(ticker),
     getHoldings(),
     getStrategies(),
   ]);
+
+  if (!quote) {
+    return (
+      <div className="flex flex-col gap-7">
+        <div className="flex items-center gap-2 text-xs text-muted">
+          <Link href="/research" className="hover:text-ink">
+            Research desk
+          </Link>
+          <span>/</span>
+          <span className="text-ink">{ticker}</span>
+        </div>
+        <PageHeader title="Ticker not found" />
+        <EmptyState
+          title={`No data for "${ticker}"`}
+          hint="Nothing came back from the market-data provider or the cache for this symbol — it's likely not a real ticker. Try the search below instead of typing one in directly."
+        />
+        <Card className="p-5">
+          <StockSearch autoFocus />
+        </Card>
+      </div>
+    );
+  }
+
+  const [history, news] = await Promise.all([getHistory(ticker), getNews(ticker)]);
 
   const ownedIn = holdings
     .filter((h) => h.ticker === ticker)
@@ -43,7 +67,7 @@ export default async function TickerPage({ params }: PageProps<"/research/[ticke
         description={
           isKnownTicker(ticker)
             ? undefined
-            : "Unrecognized ticker — showing generated placeholder data so the page still renders."
+            : "Real ticker, but not one of the app's pre-configured names — market cap, P/E, and yield may show as \"—\" if the data plan doesn't return them."
         }
         action={
           <div className="w-full sm:w-80">

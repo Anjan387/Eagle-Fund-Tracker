@@ -117,8 +117,9 @@ so refreshing is once a day and incremental, not real-time:
 - `getHistoricalClose` (`lib/prices.ts`) fetches and permanently caches a
   single historical close for a fixed past date — used once per ticker to
   price the benchmark as of the April 2026 rebuild.
-- If a ticker isn't cached and can't be fetched, the app falls back to a
-  deterministic synthetic series so pages still render.
+- If a ticker isn't cached and can't be fetched, the app shows "no data" —
+  it never fabricates a plausible-looking price or chart for a symbol that
+  doesn't actually have real data behind it.
 
 ## Deploy to Vercel
 
