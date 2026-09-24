@@ -5,7 +5,7 @@ import { compactMoney, money2, relativeTime, signedPct } from "@/lib/format";
 import { getHoldings, getStrategies } from "@/lib/store";
 import { Badge, Card, CardHeader, PageHeader } from "@/components/ui";
 import { PriceChart } from "@/components/charts/PriceChart";
-import { TickerSearch } from "../TickerSearch";
+import { StockSearch } from "@/components/StockSearch";
 
 export default async function TickerPage({ params }: PageProps<"/research/[ticker]">) {
   await requireUser();
@@ -47,7 +47,7 @@ export default async function TickerPage({ params }: PageProps<"/research/[ticke
         }
         action={
           <div className="w-full sm:w-80">
-            <TickerSearch />
+            <StockSearch />
           </div>
         }
       />

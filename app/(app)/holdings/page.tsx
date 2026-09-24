@@ -4,6 +4,7 @@ import { getHoldingRows } from "@/lib/fund";
 import { longDate, money, money2, signedPct } from "@/lib/format";
 import { getNotesForHolding, getStrategies, getUsers } from "@/lib/store";
 import { Badge, Card, EmptyState, PageHeader } from "@/components/ui";
+import { StockSearch } from "@/components/StockSearch";
 import { HoldingNotes, type NoteView } from "./HoldingNotes";
 
 export default async function HoldingsPage() {
@@ -38,6 +39,10 @@ export default async function HoldingsPage() {
         title="Holdings"
         description="Open positions in the shadow ledger, grouped by strategy and priced with the mock market-data service. Any PM can attach a thesis note."
       />
+
+      <Card className="p-5">
+        <StockSearch placeholder="Look up any company or ticker — not just fund holdings" />
+      </Card>
 
       {strategies.map((strategy) => {
         const stratRows = rows.filter((r) => r.strategyId === strategy.id);

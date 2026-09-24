@@ -4,7 +4,7 @@ import { getQuotes } from "@/lib/prices";
 import { WATCHLIST } from "@/lib/tickers";
 import { compactMoney, money2, signedPct } from "@/lib/format";
 import { Card, PageHeader } from "@/components/ui";
-import { TickerSearch } from "./TickerSearch";
+import { StockSearch } from "@/components/StockSearch";
 
 const WATCH = WATCHLIST;
 
@@ -25,7 +25,7 @@ export default async function ResearchPage() {
       </div>
 
       <Card className="p-5">
-        <TickerSearch autoFocus />
+        <StockSearch autoFocus />
       </Card>
 
       <section className="flex flex-col gap-3">

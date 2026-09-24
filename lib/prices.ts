@@ -361,6 +361,56 @@ export async function getQuotes(tickers: string[]): Promise<Record<string, Price
   return out;
 }
 
+export interface SymbolResult {
+  symbol: string;
+  name: string;
+  exchange?: string;
+}
+
+/**
+ * Autocomplete search by ticker OR company name (Twelve Data's symbol_search,
+ * which covers the broad market, not just tickers this app already knows
+ * about). Falls back to a local match against the KNOWN table — the fund's
+ * own holdings plus the research watchlist — so search still returns
+ * something useful if the API key is missing or the request fails.
+ */
+export async function searchSymbols(query: string): Promise<SymbolResult[]> {
+  const q = query.trim();
+  if (!q) return [];
+
+  if (KEY) {
+    try {
+      const res = await fetch(`${API}/symbol_search?symbol=${encodeURIComponent(q)}&apikey=${KEY}`, {
+        cache: "no-store",
+      });
+      const j = (await res.json()) as {
+        data?: { symbol?: string; instrument_name?: string; exchange?: string }[];
+      };
+      if (Array.isArray(j.data) && j.data.length) {
+        const seen = new Set<string>();
+        const results: SymbolResult[] = [];
+        for (const d of j.data) {
+          if (!d.symbol || !d.instrument_name) continue;
+          const symbol = normalize(d.symbol);
+          if (seen.has(symbol)) continue;
+          seen.add(symbol);
+          results.push({ symbol, name: d.instrument_name, exchange: d.exchange });
+        }
+        if (results.length) return results.slice(0, 8);
+      }
+    } catch {
+      /* fall through to the local match below */
+    }
+  }
+
+  const qUpper = q.toUpperCase();
+  const qLower = q.toLowerCase();
+  return Object.entries(KNOWN)
+    .filter(([symbol, meta]) => symbol.includes(qUpper) || meta.name.toLowerCase().includes(qLower))
+    .slice(0, 8)
+    .map(([symbol, meta]) => ({ symbol, name: meta.name }));
+}
+
 export async function getNews(ticker: string, count = 6): Promise<NewsItem[]> {
   const t = normalize(ticker);
   if (!KEY) return [];
