@@ -2,22 +2,22 @@
 
 /*
   Eagle Fund Tracker — visual system
-  Juniata College blue + old gold, on warm paper. Restrained and institutional:
-  this is a ledger, not a trading app.
+  Juniata College blue + old gold, on cool blue-white. Restrained and
+  institutional: this is a ledger, not a trading app.
 */
 
 :root {
-  --canvas: #f4f2ec;
+  --canvas: #eef2f8;
   --surface: #ffffff;
-  --surface-2: #faf8f3;
-  --line: #e4e0d6;
-  --line-strong: #d3cdbf;
-  --ink: #1b2330;
-  --muted: #5d6472;
-  --faint: #8a8f9c;
+  --surface-2: #e7edf6;
+  --line: #d7e0ee;
+  --line-strong: #b9c7dd;
+  --ink: #16233a;
+  --muted: #4f6180;
+  --faint: #7c8ba6;
   --brand: #1f3a5f;
   --brand-hover: #274a78;
-  --brand-contrast: #f4f2ec;
+  --brand-contrast: #eef2f8;
   --gold: #9a7327;
   --gold-soft: #f0e4c8;
   --pos: #1a6b4b;
