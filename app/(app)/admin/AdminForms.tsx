@@ -1,9 +1,10 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import {
   addCashEvent,
   addPmAccount,
+  recordDividend,
   saveReturnOverrides,
   saveSnapshot,
   type AdminFormState,
@@ -132,7 +133,6 @@ export function ReturnsForm({
 const CASH_KINDS = [
   { value: "deposit", label: "Deposit" },
   { value: "withdrawal", label: "Withdrawal" },
-  { value: "dividend", label: "Dividend received" },
   { value: "fee", label: "Fee" },
   { value: "adjustment", label: "Adjustment (correct a mistake)" },
 ] as const;
@@ -182,6 +182,92 @@ export function CashEventForm() {
       <div className="sm:col-span-5 flex flex-col gap-2">
         <FieldError>{state.error}</FieldError>
         {state.ok ? <FormOk>Cash event recorded.</FormOk> : null}
+      </div>
+    </form>
+  );
+}
+
+export function DividendForm({ tickers }: { tickers: string[] }) {
+  const [state, action, pending] = useActionState(recordDividend, initial);
+  const ref = useRef<HTMLFormElement>(null);
+  const [reinvest, setReinvest] = useState(false);
+  useEffect(() => {
+    if (state.ok) {
+      ref.current?.reset();
+      setReinvest(false);
+    }
+  }, [state.ok]);
+
+  return (
+    <form ref={ref} action={action} className="flex flex-col gap-3 px-5 py-5">
+      <div className="grid gap-3 sm:grid-cols-[1fr_1fr_1fr_auto] sm:items-end">
+        <label className="flex flex-col gap-1.5">
+          <span className={labelClass}>Paid by</span>
+          <select name="tickerPaid" defaultValue="" className={inputClass}>
+            <option value="">Not tied to a specific holding</option>
+            {tickers.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="flex flex-col gap-1.5">
+          <span className={labelClass}>Amount (USD)</span>
+          <input name="amount" type="number" step="0.01" min="0.01" required className={inputClass} />
+        </label>
+        <label className="flex flex-col gap-1.5">
+          <span className={labelClass}>Date</span>
+          <input
+            name="occurredOn"
+            type="date"
+            required
+            defaultValue={new Date().toISOString().slice(0, 10)}
+            className={inputClass}
+          />
+        </label>
+        <SubmitButton pending={pending}>Log dividend</SubmitButton>
+      </div>
+
+      <label className="flex items-center gap-2 text-sm text-ink">
+        <input
+          type="checkbox"
+          checked={reinvest}
+          onChange={(e) => setReinvest(e.target.checked)}
+          className="h-4 w-4 rounded border-line-strong accent-brand"
+        />
+        Reinvest this dividend (buy more shares with it instead of holding it as cash)
+        <input type="hidden" name="reinvest" value={reinvest ? "true" : "false"} />
+      </label>
+
+      {reinvest ? (
+        <label className="flex max-w-xs flex-col gap-1.5">
+          <span className={labelClass}>Reinvest into</span>
+          <select name="reinvestInto" required={reinvest} defaultValue="" className={inputClass}>
+            <option value="" disabled>
+              Choose a current holding…
+            </option>
+            {tickers.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
+          </select>
+          <span className="text-[11px] text-faint">
+            Shares are computed from the dividend amount at that holding&apos;s current price —
+            same as a real DRIP, fractional shares included.
+          </span>
+        </label>
+      ) : null}
+
+      <label className="flex flex-col gap-1.5">
+        <span className={labelClass}>Memo</span>
+        <input name="memo" className={inputClass} placeholder="Optional" />
+      </label>
+
+      <div className="flex flex-col gap-2">
+        <FieldError>{state.error}</FieldError>
+        {state.ok ? <FormOk>{state.message ?? "Dividend recorded."}</FormOk> : null}
       </div>
     </form>
   );

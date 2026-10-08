@@ -3,9 +3,9 @@ import { longDate, money, money2, relativeTime } from "@/lib/format";
 import { refreshPricesNow, toggleUserActive } from "@/app/actions/admin";
 import { admin as sb } from "@/lib/supabase/admin";
 import { getFundOverview } from "@/lib/fund";
-import { getCashTransactions, getMeta, getSnapshots, getUsers } from "@/lib/store";
+import { getCashTransactions, getHoldings, getMeta, getSnapshots, getUsers } from "@/lib/store";
 import { Badge, Card, CardHeader, PageHeader, SubmitButton } from "@/components/ui";
-import { AddPmForm, CashEventForm, ReturnsForm, SnapshotForm } from "./AdminForms";
+import { AddPmForm, CashEventForm, DividendForm, ReturnsForm, SnapshotForm } from "./AdminForms";
 
 const CASH_KIND_LABEL: Record<string, string> = {
   deposit: "Deposit",
@@ -19,12 +19,13 @@ const CASH_KIND_LABEL: Record<string, string> = {
 
 export default async function AdminPage() {
   await requireAdvisor();
-  const [users, snapshots, meta, overview, cashTransactions, priceMeta] = await Promise.all([
+  const [users, snapshots, meta, overview, cashTransactions, holdings, priceMeta] = await Promise.all([
     getUsers(),
     getSnapshots(),
     getMeta(),
     getFundOverview(),
     getCashTransactions(),
+    getHoldings(),
     sb()
       .from("price_cache")
       .select("ticker,date")
@@ -34,6 +35,7 @@ export default async function AdminPage() {
   ]);
   const pms = users.filter((u) => u.role === "pm");
   const newestPrice = priceMeta.data?.date as string | undefined;
+  const holdingTickers = [...new Set(holdings.map((h) => h.ticker))].sort();
 
   return (
     <div className="flex flex-col gap-8">
@@ -94,6 +96,14 @@ export default async function AdminPage() {
           description={`Derived from the ledger below, not typed in — currently ${money(overview.cashBalance)}. Buys and sells post their own entries automatically; log deposits, dividends, and fees here as they happen.`}
         />
         <CashEventForm />
+        <div className="border-t border-line">
+          <div className="px-5 pt-4">
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-faint">
+              Dividend received
+            </h3>
+          </div>
+          <DividendForm tickers={holdingTickers} />
+        </div>
         <div className="overflow-x-auto border-t border-line">
           <table className="w-full min-w-[560px] text-sm">
             <thead>

@@ -2,11 +2,13 @@
 
 import { revalidatePath } from "next/cache";
 import { requireAdvisor } from "@/lib/auth";
-import { refreshStale } from "@/lib/prices";
+import { getQuote, refreshStale } from "@/lib/prices";
 import { trackedTickers } from "@/lib/tickers";
 import {
   addCashTransaction,
+  addTrade,
   createUser,
+  getHoldings,
   getUserByEmail,
   setMeta,
   setUserActive,
@@ -121,7 +123,9 @@ export async function addCashEvent(
   const occurredOn = String(formData.get("occurredOn") ?? "");
   const memo = String(formData.get("memo") ?? "").trim();
 
-  if (!["deposit", "withdrawal", "dividend", "fee", "adjustment"].includes(kind))
+  // Dividends have their own form/action (recordDividend) below, since they
+  // can trigger a reinvestment trade - not just a plain cash entry.
+  if (!["deposit", "withdrawal", "fee", "adjustment"].includes(kind))
     return { error: "Choose a valid event type." };
   if (!Number.isFinite(amountInput) || amountInput === 0)
     return { error: "Enter a non-zero dollar amount." };
@@ -137,4 +141,83 @@ export async function addCashEvent(
   revalidatePath("/admin");
   revalidatePath("/overview");
   return { ok: true };
+}
+
+/**
+ * Logs a dividend. With the reinvestment toggle off, this is just a cash
+ * event like any other. With it on, the dividend is additionally used to buy
+ * more of a chosen current holding (fractional shares, same as a real DRIP) -
+ * at that holding's live price, dated the same day, via the same addTrade()
+ * every manually-entered trade goes through, so it updates holdings and
+ * posts its own offsetting cash entry exactly like a normal buy would. The
+ * two cash entries (the dividend in, the trade_buy out) net to zero since
+ * the share count is derived from the dividend amount itself.
+ */
+export async function recordDividend(
+  _prev: AdminFormState,
+  formData: FormData,
+): Promise<AdminFormState> {
+  const advisor = await requireAdvisor();
+  const amount = Number(formData.get("amount"));
+  const occurredOn = String(formData.get("occurredOn") ?? "");
+  const tickerPaid = String(formData.get("tickerPaid") ?? "").trim().toUpperCase();
+  const reinvest = String(formData.get("reinvest") ?? "") === "true";
+  const reinvestInto = String(formData.get("reinvestInto") ?? "").trim().toUpperCase();
+  const memo = String(formData.get("memo") ?? "").trim();
+
+  if (!Number.isFinite(amount) || amount <= 0) return { error: "Enter a positive dollar amount." };
+  if (!occurredOn) return { error: "Date is required." };
+
+  if (!reinvest) {
+    await addCashTransaction({
+      occurredOn,
+      kind: "dividend",
+      amount,
+      ticker: tickerPaid || undefined,
+      memo: memo || undefined,
+      enteredBy: advisor.id,
+    });
+    revalidatePath("/admin");
+    revalidatePath("/overview");
+    return { ok: true };
+  }
+
+  if (!reinvestInto) return { error: "Choose which holding to reinvest the dividend into." };
+  const holdings = await getHoldings();
+  const target = holdings.find((h) => h.ticker === reinvestInto);
+  if (!target) return { error: `${reinvestInto} isn't a current holding.` };
+
+  const quote = await getQuote(reinvestInto);
+  if (!quote || quote.price <= 0)
+    return { error: `Couldn't get a current price for ${reinvestInto} to compute reinvestment shares.` };
+
+  const shares = Number((amount / quote.price).toFixed(6));
+
+  await addCashTransaction({
+    occurredOn,
+    kind: "dividend",
+    amount,
+    ticker: tickerPaid || undefined,
+    memo: memo || `Reinvested into ${reinvestInto}`,
+    enteredBy: advisor.id,
+  });
+  await addTrade({
+    ticker: reinvestInto,
+    action: "buy",
+    shares,
+    price: quote.price,
+    tradeDate: occurredOn,
+    strategyId: target.strategyId,
+    enteredBy: advisor.id,
+    source: "advisor_entry",
+    notes: `Dividend reinvestment — $${amount.toFixed(2)}${
+      tickerPaid ? ` from ${tickerPaid}` : ""
+    } reinvested into ${reinvestInto} at $${quote.price.toFixed(2)}/share (${shares} sh).`,
+  });
+
+  revalidatePath("/admin");
+  revalidatePath("/overview");
+  revalidatePath("/holdings");
+  revalidatePath("/transactions");
+  return { ok: true, message: `Reinvested as ${shares} sh of ${reinvestInto} at $${quote.price.toFixed(2)}.` };
 }
