@@ -54,9 +54,21 @@ export function NewProposalForm({ strategies }: { strategies: Strategy[] }) {
           placeholder="Why this fits the strategy: valuation, moat, catalyst, how it sits against IPS position limits, any ESG considerations."
         />
       </label>
+      <label className="sm:col-span-2 flex flex-col gap-1.5">
+        <span className={labelClass}>Attachment (optional)</span>
+        <input
+          type="file"
+          name="file"
+          className="text-sm text-muted file:mr-2 file:rounded file:border-0 file:bg-brand file:px-2.5 file:py-1.5 file:text-xs file:font-medium file:text-brand-contrast hover:file:bg-brand-hover"
+        />
+        <span className="text-[11px] text-faint">
+          Any file type — Excel, PDF, Word, etc. — up to 25MB. You can also attach more (or
+          others can) once it's submitted.
+        </span>
+      </label>
       <div className="sm:col-span-2 flex flex-col gap-2">
         <FieldError>{state.error}</FieldError>
-        {state.ok ? <FormOk>Proposal submitted to the advisor queue.</FormOk> : null}
+        {state.ok ? <FormOk>{state.message ?? "Proposal submitted to the advisor queue."}</FormOk> : null}
         <SubmitButton pending={pending} className="self-start">
           Submit proposal
         </SubmitButton>

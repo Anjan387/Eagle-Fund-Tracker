@@ -21,6 +21,7 @@ const VOTE_CHOICES: VoteChoice[] = ["in_favor", "against", "needs_review"];
 export interface ProposalFormState {
   error?: string;
   ok?: boolean;
+  message?: string;
 }
 
 export async function submitProposal(
@@ -34,16 +35,35 @@ export async function submitProposal(
   const shares = Number(formData.get("shares"));
   const strategyId = String(formData.get("strategyId") ?? "");
   const rationale = String(formData.get("rationale") ?? "").trim();
+  const file = formData.get("file");
 
   if (!ticker) return { error: "Ticker is required." };
   if (action !== "buy" && action !== "sell") return { error: "Choose buy or sell." };
   if (!Number.isFinite(shares) || shares <= 0) return { error: "Shares must be a positive number." };
   if (!(await getStrategyById(strategyId))) return { error: "Choose a strategy." };
   if (rationale.length < 20) return { error: "Give at least a sentence or two of rationale." };
+  if (file instanceof File && file.size > MAX_ATTACHMENT_BYTES) {
+    return { error: `That attachment is larger than the ${MAX_ATTACHMENT_BYTES / (1024 * 1024)}MB limit.` };
+  }
 
-  await createProposal({ ticker, action, shares, strategyId, rationale, proposedBy: user.id });
+  const proposal = await createProposal({ ticker, action, shares, strategyId, rationale, proposedBy: user.id });
+
+  let message = "Proposal submitted to the advisor queue.";
+  if (file instanceof File && file.size > 0) {
+    try {
+      await uploadAttachment({ proposalId: proposal.id, file, uploadedBy: user.id });
+      message = "Proposal submitted, with your attachment.";
+    } catch (e) {
+      // The proposal itself is already saved - don't lose it over a failed
+      // upload. Just tell the PM they'll need to attach it again below.
+      message = `Proposal submitted, but the attachment failed to upload (${
+        e instanceof Error ? e.message : "unknown error"
+      }) - attach it again below.`;
+    }
+  }
+
   revalidatePath("/proposals");
-  return { ok: true };
+  return { ok: true, message };
 }
 
 export async function resolveProposal(formData: FormData): Promise<void> {
