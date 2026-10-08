@@ -59,12 +59,13 @@ export default async function OverviewPage() {
         <Card>
           <CardHeader
             title="Strategy allocation vs IPS targets"
-            description="Blue band = IPS target range. Solid bar = current live weight."
+            description="Bar color is the status at a glance; the two ticks mark the IPS target range."
           />
           <AllocationBars
             allocations={o.allocations}
             cashWeightPct={o.cashWeightPct}
             cashValue={o.cashBalance}
+            fundValue={o.fundValue}
           />
         </Card>
 
