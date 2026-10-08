@@ -7,8 +7,16 @@ import {
   MAX_ATTACHMENT_BYTES,
   uploadAttachment,
 } from "@/lib/attachments";
-import { createProposal, decideProposal, getStrategyById } from "@/lib/store";
-import type { TradeAction } from "@/lib/types";
+import {
+  castVote,
+  createProposal,
+  decideProposal,
+  getProposalById,
+  getStrategyById,
+} from "@/lib/store";
+import type { TradeAction, VoteChoice } from "@/lib/types";
+
+const VOTE_CHOICES: VoteChoice[] = ["in_favor", "against", "needs_review"];
 
 export interface ProposalFormState {
   error?: string;
@@ -46,6 +54,24 @@ export async function resolveProposal(formData: FormData): Promise<void> {
   if (!proposalId || (decision !== "approved" && decision !== "rejected")) return;
 
   await decideProposal({ proposalId, decision, decidedBy: advisor.id, decisionNote });
+  revalidatePath("/proposals");
+}
+
+// PMs only, per spec — the advisor is the audience for the vote tally, not a
+// voter. Only while a proposal is still pending; the real status is always
+// re-checked here rather than trusted from the client.
+export async function castProposalVote(formData: FormData): Promise<void> {
+  const user = await requireUser();
+  if (user.role !== "pm") return;
+
+  const proposalId = String(formData.get("proposalId") ?? "");
+  const vote = String(formData.get("vote") ?? "") as VoteChoice;
+  if (!proposalId || !VOTE_CHOICES.includes(vote)) return;
+
+  const proposal = await getProposalById(proposalId);
+  if (!proposal || proposal.status !== "pending") return;
+
+  await castVote({ proposalId, voterId: user.id, vote });
   revalidatePath("/proposals");
 }
 

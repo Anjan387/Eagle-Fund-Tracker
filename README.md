@@ -77,6 +77,10 @@ there is no self-registration.
   the real filename — never rendered inline — so an uploaded HTML/SVG file
   can't execute as a page on the app's own origin. See
   [`lib/attachments.ts`](lib/attachments.ts).
+- `proposal_votes`: one row per (proposal, PM) — PMs vote In favor / Against /
+  Need to review on any pending proposal (one vote each, changeable; casting
+  again just updates it). A read on the room for the advisor, not a binding
+  tally — the advisor still makes the actual approve/reject call.
 
 ## What's computed vs. what's typed in
 

@@ -9,6 +9,7 @@ begin;
 -- ---- clean slate (public schema only; never touches auth.*) -----------------
 drop table if exists public.holding_notes    cascade;
 drop table if exists public.proposal_attachments cascade;
+drop table if exists public.proposal_votes cascade;
 drop table if exists public.cash_transactions cascade;
 drop table if exists public.fund_value_history cascade;
 drop table if exists public.trades         cascade;
@@ -114,6 +115,19 @@ create table public.proposal_attachments (
 );
 create index proposal_attachments_proposal_idx on public.proposal_attachments(proposal_id);
 
+-- ---- proposal votes (PMs weigh in while a proposal is pending; one vote
+--      per PM per proposal, casting again just changes it) ----------------
+create table public.proposal_votes (
+  id          uuid primary key default gen_random_uuid(),
+  proposal_id uuid not null references public.proposals(id) on delete cascade,
+  voter_id    uuid not null references public.profiles(id),
+  vote        text not null check (vote in ('in_favor','against','needs_review')),
+  created_at  timestamptz not null default now(),
+  updated_at  timestamptz not null default now(),
+  unique (proposal_id, voter_id)
+);
+create index proposal_votes_proposal_idx on public.proposal_votes(proposal_id);
+
 -- ---- holding notes -----------------------------------------------------
 create table public.holding_notes (
   id         uuid primary key default gen_random_uuid(),
@@ -207,6 +221,7 @@ alter table public.fund_meta         enable row level security;
 alter table public.cash_transactions enable row level security;
 alter table public.fund_value_history enable row level security;
 alter table public.proposal_attachments enable row level security;
+alter table public.proposal_votes enable row level security;
 
 -- signed-in users may read; nobody may write via the public API
 create policy "read for authenticated" on public.profiles          for select to authenticated using (true);
@@ -216,6 +231,7 @@ create policy "read for authenticated" on public.trades            for select to
 create policy "read for authenticated" on public.proposals         for select to authenticated using (true);
 create policy "read for authenticated" on public.holding_notes     for select to authenticated using (true);
 create policy "read for authenticated" on public.proposal_attachments for select to authenticated using (true);
+create policy "read for authenticated" on public.proposal_votes for select to authenticated using (true);
 create policy "read for authenticated" on public.price_cache       for select to authenticated using (true);
 create policy "read for authenticated" on public.fund_snapshots    for select to authenticated using (true);
 create policy "read for authenticated" on public.fund_meta         for select to authenticated using (true);

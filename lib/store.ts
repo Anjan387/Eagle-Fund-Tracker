@@ -15,8 +15,18 @@ import {
   rowToStrategy,
   rowToTrade,
   rowToUser,
+  rowToVote,
 } from "./db-map";
-import type { CashTransaction, CashTransactionKind, FundValueSnapshot, Proposal, Trade, User } from "./types";
+import type {
+  CashTransaction,
+  CashTransactionKind,
+  FundValueSnapshot,
+  Proposal,
+  ProposalVote,
+  Trade,
+  User,
+  VoteChoice,
+} from "./types";
 
 function must<T>(data: T | null, error: { message: string } | null, what: string): T {
   if (error) throw new Error(`${what}: ${error.message}`);
@@ -84,6 +94,27 @@ export async function getProposals() {
     .select("*")
     .order("created_at", { ascending: false });
   return must(data, error, "getProposals").map(rowToProposal);
+}
+
+export async function getProposalById(proposalId: string): Promise<Proposal | null> {
+  const { data } = await admin().from("proposals").select("*").eq("id", proposalId).maybeSingle();
+  return data ? rowToProposal(data) : null;
+}
+
+// Best-effort, same reasoning as getAttachments in lib/attachments.ts: a vote
+// tally is a secondary view on top of a proposal, not something that should
+// be able to take the whole page down if the table is ever missing.
+export async function getVotesForProposal(proposalId: string): Promise<ProposalVote[]> {
+  const { data, error } = await admin()
+    .from("proposal_votes")
+    .select("*")
+    .eq("proposal_id", proposalId)
+    .order("created_at", { ascending: true });
+  if (error) {
+    console.error(`getVotesForProposal: ${error.message}`);
+    return [];
+  }
+  return (data ?? []).map(rowToVote);
 }
 
 export async function getNotesForHolding(holdingId: string) {
@@ -319,6 +350,27 @@ export async function decideProposal(input: {
     .select("*")
     .single();
   return rowToProposal(must(data, error, "decideProposal"));
+}
+
+// One vote per (proposal, voter) — casting again just changes it, same as
+// editing a holding note, rather than piling up a history of past votes.
+export async function castVote(input: {
+  proposalId: string;
+  voterId: string;
+  vote: VoteChoice;
+}): Promise<void> {
+  const { error } = await admin()
+    .from("proposal_votes")
+    .upsert(
+      {
+        proposal_id: input.proposalId,
+        voter_id: input.voterId,
+        vote: input.vote,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "proposal_id,voter_id" },
+    );
+  if (error) throw new Error(`castVote: ${error.message}`);
 }
 
 export async function upsertNote(input: {

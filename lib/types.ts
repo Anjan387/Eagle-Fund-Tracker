@@ -73,6 +73,17 @@ export interface Proposal {
   decisionNote?: string;
 }
 
+export type VoteChoice = "in_favor" | "against" | "needs_review";
+
+export interface ProposalVote {
+  id: string;
+  proposalId: string;
+  voterId: string;
+  vote: VoteChoice;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface ProposalAttachment {
   id: string;
   proposalId: string;

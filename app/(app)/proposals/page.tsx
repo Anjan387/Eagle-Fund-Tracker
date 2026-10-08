@@ -1,12 +1,13 @@
 import { requireUser } from "@/lib/auth";
 import { longDate, relativeTime } from "@/lib/format";
 import { getAttachments } from "@/lib/attachments";
-import { getProposals, getStrategies, getTrades, getUsers } from "@/lib/store";
+import { getProposals, getStrategies, getTrades, getUsers, getVotesForProposal } from "@/lib/store";
 import { Badge, Card, CardHeader, EmptyState, PageHeader } from "@/components/ui";
 import type { Proposal } from "@/lib/types";
 import { AttachmentsPanel, type AttachmentView } from "./AttachmentsPanel";
 import { NewProposalForm } from "./NewProposalForm";
 import { ProposalDecision } from "./ProposalDecision";
+import { VotePanel, type VoteView } from "./VotePanel";
 
 const statusTone = {
   pending: "gold",
@@ -28,9 +29,10 @@ export default async function ProposalsPage() {
   const filledProposalIds = new Set(trades.map((t) => t.proposalId).filter(Boolean));
 
   const attachmentsByProposal = new Map<string, AttachmentView[]>();
+  const votesByProposal = new Map<string, VoteView[]>();
   await Promise.all(
     proposals.map(async (p) => {
-      const attachments = await getAttachments(p.id);
+      const [attachments, votes] = await Promise.all([getAttachments(p.id), getVotesForProposal(p.id)]);
       attachmentsByProposal.set(
         p.id,
         attachments.map((a) => ({
@@ -40,6 +42,14 @@ export default async function ProposalsPage() {
           uploadedBy: a.uploadedBy ?? "",
           uploadedByName: userName.get(a.uploadedBy ?? "") ?? "Unknown",
           createdAt: a.createdAt,
+        })),
+      );
+      votesByProposal.set(
+        p.id,
+        votes.map((v) => ({
+          voterId: v.voterId,
+          voterName: userName.get(v.voterId) ?? "Unknown",
+          vote: v.vote,
         })),
       );
     }),
@@ -83,6 +93,13 @@ export default async function ProposalsPage() {
           </div>
         ) : null}
 
+        <VotePanel
+          proposalId={p.id}
+          votes={votesByProposal.get(p.id) ?? []}
+          currentUserId={user.id}
+          canVote={user.role === "pm" && p.status === "pending"}
+        />
+
         <AttachmentsPanel
           proposalId={p.id}
           attachments={attachmentsByProposal.get(p.id) ?? []}
@@ -103,8 +120,8 @@ export default async function ProposalsPage() {
         title="Proposals"
         description={
           user.role === "advisor"
-            ? "Review the queue. A proposal is intent, not execution — approving it does not create a trade."
-            : "Suggest a buy or sell for the fund. The advisor brings it to a vote and records any resulting trade separately."
+            ? "Review the queue — PM votes below each proposal are a read on the room, not a binding tally. A proposal is intent, not execution; approving it does not create a trade."
+            : "Suggest a buy or sell for the fund, and vote on everyone else's. The advisor weighs the votes but makes the final call and records any resulting trade separately."
         }
       />
 

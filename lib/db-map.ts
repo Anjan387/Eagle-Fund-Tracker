@@ -7,6 +7,7 @@ import type {
   HoldingNote,
   Proposal,
   ProposalAttachment,
+  ProposalVote,
   Strategy,
   Trade,
   User,
@@ -70,6 +71,15 @@ export const rowToProposal = (r: Row): Proposal => ({
   decidedAt: r.decided_at ? date(r.decided_at) : undefined,
   decidedBy: r.decided_by ?? undefined,
   decisionNote: r.decision_note ?? undefined,
+});
+
+export const rowToVote = (r: Row): ProposalVote => ({
+  id: r.id,
+  proposalId: r.proposal_id,
+  voterId: r.voter_id,
+  vote: r.vote,
+  createdAt: date(r.created_at),
+  updatedAt: date(r.updated_at),
 });
 
 export const rowToAttachment = (r: Row): ProposalAttachment => ({
