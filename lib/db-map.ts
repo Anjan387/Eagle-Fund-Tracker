@@ -6,6 +6,7 @@ import type {
   Holding,
   HoldingNote,
   Proposal,
+  ProposalAttachment,
   Strategy,
   Trade,
   User,
@@ -69,6 +70,17 @@ export const rowToProposal = (r: Row): Proposal => ({
   decidedAt: r.decided_at ? date(r.decided_at) : undefined,
   decidedBy: r.decided_by ?? undefined,
   decisionNote: r.decision_note ?? undefined,
+});
+
+export const rowToAttachment = (r: Row): ProposalAttachment => ({
+  id: r.id,
+  proposalId: r.proposal_id,
+  storagePath: r.storage_path,
+  fileName: r.file_name,
+  contentType: r.content_type ?? undefined,
+  sizeBytes: Number(r.size_bytes),
+  uploadedBy: r.uploaded_by ?? undefined,
+  createdAt: date(r.created_at),
 });
 
 export const rowToNote = (r: Row): HoldingNote => ({

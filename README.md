@@ -68,6 +68,15 @@ there is no self-registration.
   functions.
 - `trades` and `cash_transactions` are both append-only — a database trigger
   rejects `UPDATE`/`DELETE` on either. Fix a mistake with a new offsetting entry.
+- Proposal attachments (any PM or the advisor can attach a file to any
+  proposal — research, an Excel model, a term sheet) live in a private
+  Supabase Storage bucket (`proposal-attachments`, 25MB/file, no type
+  restriction), not in Postgres. `proposal_attachments` just tracks which
+  file belongs to which proposal. Downloads always go through a fresh,
+  short-lived signed URL (`/api/attachments/[id]`) that forces a save under
+  the real filename — never rendered inline — so an uploaded HTML/SVG file
+  can't execute as a page on the app's own origin. See
+  [`lib/attachments.ts`](lib/attachments.ts).
 
 ## What's computed vs. what's typed in
 

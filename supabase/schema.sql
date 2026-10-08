@@ -8,6 +8,7 @@ begin;
 
 -- ---- clean slate (public schema only; never touches auth.*) -----------------
 drop table if exists public.holding_notes    cascade;
+drop table if exists public.proposal_attachments cascade;
 drop table if exists public.cash_transactions cascade;
 drop table if exists public.fund_value_history cascade;
 drop table if exists public.trades         cascade;
@@ -97,6 +98,21 @@ create table public.proposals (
   decision_note text
 );
 create index proposals_status_idx on public.proposals(status);
+
+-- ---- proposal attachments (files live in the "proposal-attachments" Storage
+--      bucket - private, 25MB/file, no type restriction; created separately
+--      via the Storage API, not by this script) ----------------------------
+create table public.proposal_attachments (
+  id           uuid primary key default gen_random_uuid(),
+  proposal_id  uuid not null references public.proposals(id) on delete cascade,
+  storage_path text not null,
+  file_name    text not null,
+  content_type text,
+  size_bytes   bigint not null check (size_bytes >= 0),
+  uploaded_by  uuid references public.profiles(id),
+  created_at   timestamptz not null default now()
+);
+create index proposal_attachments_proposal_idx on public.proposal_attachments(proposal_id);
 
 -- ---- holding notes -----------------------------------------------------
 create table public.holding_notes (
@@ -190,6 +206,7 @@ alter table public.fund_snapshots    enable row level security;
 alter table public.fund_meta         enable row level security;
 alter table public.cash_transactions enable row level security;
 alter table public.fund_value_history enable row level security;
+alter table public.proposal_attachments enable row level security;
 
 -- signed-in users may read; nobody may write via the public API
 create policy "read for authenticated" on public.profiles          for select to authenticated using (true);
@@ -198,6 +215,7 @@ create policy "read for authenticated" on public.holdings          for select to
 create policy "read for authenticated" on public.trades            for select to authenticated using (true);
 create policy "read for authenticated" on public.proposals         for select to authenticated using (true);
 create policy "read for authenticated" on public.holding_notes     for select to authenticated using (true);
+create policy "read for authenticated" on public.proposal_attachments for select to authenticated using (true);
 create policy "read for authenticated" on public.price_cache       for select to authenticated using (true);
 create policy "read for authenticated" on public.fund_snapshots    for select to authenticated using (true);
 create policy "read for authenticated" on public.fund_meta         for select to authenticated using (true);

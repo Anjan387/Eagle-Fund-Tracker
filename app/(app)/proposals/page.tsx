@@ -1,8 +1,10 @@
 import { requireUser } from "@/lib/auth";
 import { longDate, relativeTime } from "@/lib/format";
+import { getAttachments } from "@/lib/attachments";
 import { getProposals, getStrategies, getTrades, getUsers } from "@/lib/store";
 import { Badge, Card, CardHeader, EmptyState, PageHeader } from "@/components/ui";
 import type { Proposal } from "@/lib/types";
+import { AttachmentsPanel, type AttachmentView } from "./AttachmentsPanel";
 import { NewProposalForm } from "./NewProposalForm";
 import { ProposalDecision } from "./ProposalDecision";
 
@@ -24,6 +26,24 @@ export default async function ProposalsPage() {
   const stratName = new Map(strategies.map((s) => [s.id, s.name]));
   const userName = new Map(users.map((u) => [u.id, u.name]));
   const filledProposalIds = new Set(trades.map((t) => t.proposalId).filter(Boolean));
+
+  const attachmentsByProposal = new Map<string, AttachmentView[]>();
+  await Promise.all(
+    proposals.map(async (p) => {
+      const attachments = await getAttachments(p.id);
+      attachmentsByProposal.set(
+        p.id,
+        attachments.map((a) => ({
+          id: a.id,
+          fileName: a.fileName,
+          sizeBytes: a.sizeBytes,
+          uploadedBy: a.uploadedBy ?? "",
+          uploadedByName: userName.get(a.uploadedBy ?? "") ?? "Unknown",
+          createdAt: a.createdAt,
+        })),
+      );
+    }),
+  );
 
   const pending = proposals.filter((p) => p.status === "pending");
   const decided = proposals.filter((p) => p.status !== "pending");
@@ -62,6 +82,13 @@ export default async function ProposalsPage() {
             {p.decisionNote ? <p className="mt-1 whitespace-pre-wrap">{p.decisionNote}</p> : null}
           </div>
         ) : null}
+
+        <AttachmentsPanel
+          proposalId={p.id}
+          attachments={attachmentsByProposal.get(p.id) ?? []}
+          currentUserId={user.id}
+          canModerate={user.role === "advisor"}
+        />
 
         {user.role === "advisor" && p.status === "pending" ? (
           <ProposalDecision proposalId={p.id} />

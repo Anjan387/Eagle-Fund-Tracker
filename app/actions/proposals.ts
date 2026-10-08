@@ -2,6 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import { requireAdvisor, requireUser } from "@/lib/auth";
+import {
+  deleteAttachment,
+  MAX_ATTACHMENT_BYTES,
+  uploadAttachment,
+} from "@/lib/attachments";
 import { createProposal, decideProposal, getStrategyById } from "@/lib/store";
 import type { TradeAction } from "@/lib/types";
 
@@ -41,5 +46,47 @@ export async function resolveProposal(formData: FormData): Promise<void> {
   if (!proposalId || (decision !== "approved" && decision !== "rejected")) return;
 
   await decideProposal({ proposalId, decision, decidedBy: advisor.id, decisionNote });
+  revalidatePath("/proposals");
+}
+
+export interface AttachmentFormState {
+  error?: string;
+  ok?: boolean;
+}
+
+// Any PM or the advisor can attach supporting files (research, an Excel
+// model, a term sheet) to any proposal - not just one's own, since due
+// diligence is meant to be shared.
+export async function attachFileToProposal(
+  _prev: AttachmentFormState,
+  formData: FormData,
+): Promise<AttachmentFormState> {
+  const user = await requireUser();
+  const proposalId = String(formData.get("proposalId") ?? "");
+  const file = formData.get("file");
+
+  if (!proposalId) return { error: "Unknown proposal." };
+  if (!(file instanceof File) || file.size === 0) return { error: "Choose a file to attach." };
+  if (file.size > MAX_ATTACHMENT_BYTES) {
+    return { error: `That file is larger than the ${MAX_ATTACHMENT_BYTES / (1024 * 1024)}MB limit.` };
+  }
+
+  try {
+    await uploadAttachment({ proposalId, file, uploadedBy: user.id });
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Upload failed." };
+  }
+  revalidatePath("/proposals");
+  return { ok: true };
+}
+
+// Only the person who uploaded a file, or the advisor, can remove it.
+export async function removeAttachment(formData: FormData): Promise<void> {
+  const user = await requireUser();
+  const attachmentId = String(formData.get("attachmentId") ?? "");
+  const uploadedBy = String(formData.get("uploadedBy") ?? "");
+  if (!attachmentId) return;
+  if (user.role !== "advisor" && user.id !== uploadedBy) return;
+  await deleteAttachment(attachmentId);
   revalidatePath("/proposals");
 }

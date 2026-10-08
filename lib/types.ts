@@ -73,6 +73,17 @@ export interface Proposal {
   decisionNote?: string;
 }
 
+export interface ProposalAttachment {
+  id: string;
+  proposalId: string;
+  storagePath: string; // path within the "proposal-attachments" Storage bucket
+  fileName: string; // original filename, for display and download
+  contentType?: string;
+  sizeBytes: number;
+  uploadedBy?: string; // user id
+  createdAt: string;
+}
+
 export interface HoldingNote {
   id: string;
   holdingId: string;
