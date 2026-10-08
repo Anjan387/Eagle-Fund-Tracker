@@ -14,19 +14,22 @@ import type { ProposalAttachment } from "./types";
 const BUCKET = "proposal-attachments";
 export const MAX_ATTACHMENT_BYTES = 25 * 1024 * 1024; // matches the bucket's own limit
 
-function must<T>(data: T | null, error: { message: string } | null, what: string): T {
-  if (error) throw new Error(`${what}: ${error.message}`);
-  if (data === null) throw new Error(`${what}: no data`);
-  return data;
-}
-
+// Reading the list is best-effort: a secondary feature like "show what's
+// attached" should never be able to take the whole Proposals page down (e.g.
+// if migration 003 hasn't been run yet and the table doesn't exist). Uploads
+// and downloads below still fail loudly - those are real user actions that
+// deserve a real error.
 export async function getAttachments(proposalId: string): Promise<ProposalAttachment[]> {
   const { data, error } = await admin()
     .from("proposal_attachments")
     .select("*")
     .eq("proposal_id", proposalId)
     .order("created_at", { ascending: false });
-  return must(data, error, "getAttachments").map(rowToAttachment);
+  if (error) {
+    console.error(`getAttachments: ${error.message}`);
+    return [];
+  }
+  return (data ?? []).map(rowToAttachment);
 }
 
 export async function uploadAttachment(input: {
