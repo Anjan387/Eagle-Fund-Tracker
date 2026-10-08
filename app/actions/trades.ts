@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireAdvisor } from "@/lib/auth";
+import { getQuote } from "@/lib/prices";
 import { addTrade, getStrategyById } from "@/lib/store";
 import type { TradeAction } from "@/lib/types";
 
@@ -31,6 +32,9 @@ export async function recordTrade(
   if (!Number.isFinite(price) || price <= 0) return { error: "Price must be a positive number." };
   if (!tradeDate) return { error: "Trade date is required." };
   if (!(await getStrategyById(strategyId))) return { error: "Choose a strategy." };
+  if (!(await getQuote(ticker))) {
+    return { error: `"${ticker}" isn't a recognized ticker — pick one from the search suggestions.` };
+  }
 
   await addTrade({
     ticker,

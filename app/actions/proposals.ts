@@ -7,6 +7,7 @@ import {
   MAX_ATTACHMENT_BYTES,
   uploadAttachment,
 } from "@/lib/attachments";
+import { getQuote } from "@/lib/prices";
 import {
   castVote,
   createProposal,
@@ -44,6 +45,9 @@ export async function submitProposal(
   if (rationale.length < 20) return { error: "Give at least a sentence or two of rationale." };
   if (file instanceof File && file.size > MAX_ATTACHMENT_BYTES) {
     return { error: `That attachment is larger than the ${MAX_ATTACHMENT_BYTES / (1024 * 1024)}MB limit.` };
+  }
+  if (!(await getQuote(ticker))) {
+    return { error: `"${ticker}" isn't a recognized ticker — pick one from the search suggestions.` };
   }
 
   const proposal = await createProposal({ ticker, action, shares, strategyId, rationale, proposedBy: user.id });

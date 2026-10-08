@@ -1,8 +1,9 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { submitProposal, type ProposalFormState } from "@/app/actions/proposals";
 import { FieldError, FormOk, inputClass, labelClass, SubmitButton } from "@/components/ui";
+import { TickerAutocomplete } from "@/components/TickerAutocomplete";
 import type { Strategy } from "@/lib/types";
 
 const initial: ProposalFormState = {};
@@ -10,15 +11,25 @@ const initial: ProposalFormState = {};
 export function NewProposalForm({ strategies }: { strategies: Strategy[] }) {
   const [state, formAction, pending] = useActionState(submitProposal, initial);
   const ref = useRef<HTMLFormElement>(null);
+  const [ticker, setTicker] = useState("");
   useEffect(() => {
-    if (state.ok) ref.current?.reset();
+    if (state.ok) {
+      ref.current?.reset();
+      setTicker("");
+    }
   }, [state.ok]);
 
   return (
     <form ref={ref} action={formAction} className="grid gap-4 px-5 py-5 sm:grid-cols-2">
       <label className="flex flex-col gap-1.5">
         <span className={labelClass}>Ticker</span>
-        <input name="ticker" required className={inputClass} placeholder="INTU" />
+        <TickerAutocomplete
+          name="ticker"
+          value={ticker}
+          onValueChange={setTicker}
+          required
+          placeholder="Company name or ticker — Intuit, INTU…"
+        />
       </label>
       <label className="flex flex-col gap-1.5">
         <span className={labelClass}>Action</span>

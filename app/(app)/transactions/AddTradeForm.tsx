@@ -1,8 +1,9 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { recordTrade, type TradeFormState } from "@/app/actions/trades";
 import { FieldError, FormOk, inputClass, labelClass, SubmitButton } from "@/components/ui";
+import { TickerAutocomplete } from "@/components/TickerAutocomplete";
 import type { Strategy } from "@/lib/types";
 
 const initial: TradeFormState = {};
@@ -22,8 +23,12 @@ export function AddTradeForm({
 }) {
   const [state, formAction, pending] = useActionState(recordTrade, initial);
   const formRef = useRef<HTMLFormElement>(null);
+  const [ticker, setTicker] = useState("");
   useEffect(() => {
-    if (state.ok) formRef.current?.reset();
+    if (state.ok) {
+      formRef.current?.reset();
+      setTicker("");
+    }
   }, [state.ok]);
 
   const today = new Date().toISOString().slice(0, 10);
@@ -41,7 +46,7 @@ export function AddTradeForm({
               const p = approvedProposals.find((x) => x.id === e.target.value);
               if (!p || !formRef.current) return;
               const f = formRef.current;
-              (f.elements.namedItem("ticker") as HTMLInputElement).value = p.ticker;
+              setTicker(p.ticker);
               (f.elements.namedItem("action") as HTMLSelectElement).value = p.action;
               (f.elements.namedItem("shares") as HTMLInputElement).value = String(p.shares);
               (f.elements.namedItem("strategyId") as HTMLSelectElement).value = p.strategyId;
@@ -59,7 +64,13 @@ export function AddTradeForm({
 
       <label className="flex flex-col gap-1.5">
         <span className={labelClass}>Ticker</span>
-        <input name="ticker" required className={inputClass} placeholder="AAPL" />
+        <TickerAutocomplete
+          name="ticker"
+          value={ticker}
+          onValueChange={setTicker}
+          required
+          placeholder="Company name or ticker — Apple, AAPL…"
+        />
       </label>
 
       <label className="flex flex-col gap-1.5">
