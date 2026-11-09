@@ -65,18 +65,35 @@ export function isKnownTicker(ticker: string): boolean {
 }
 
 // --- cache helpers
-async function readCache(tickers: string[]): Promise<Map<string, PricePoint[]>> {
-  const { data } = await admin()
-    .from("price_cache")
-    .select("ticker,date,close")
-    .in("ticker", tickers)
-    .order("date");
-  const map = new Map<string, PricePoint[]>();
-  for (const row of data ?? []) {
-    const list = map.get(row.ticker) ?? [];
-    list.push({ date: String(row.date).slice(0, 10), close: Number(row.close) });
-    map.set(row.ticker, list);
+// Supabase caps every response at 1000 rows, and the cache holds 400+ rows per
+// ticker. So this reads one ticker at a time, paging - never one big .in()
+// query across tickers, which comes back silently truncated to the OLDEST 1000
+// rows and makes every ticker look like its last close was over a year ago.
+const PAGE_ROWS = 1000;
+
+async function readSeries(ticker: string): Promise<PricePoint[]> {
+  const series: PricePoint[] = [];
+  for (let from = 0; ; from += PAGE_ROWS) {
+    const { data } = await admin()
+      .from("price_cache")
+      .select("date,close")
+      .eq("ticker", ticker)
+      .order("date")
+      .range(from, from + PAGE_ROWS - 1);
+    for (const row of data ?? []) {
+      series.push({ date: String(row.date).slice(0, 10), close: Number(row.close) });
+    }
+    if (!data || data.length < PAGE_ROWS) break;
   }
+  return series;
+}
+
+async function readCache(tickers: string[]): Promise<Map<string, PricePoint[]>> {
+  const lists = await Promise.all(tickers.map(readSeries));
+  const map = new Map<string, PricePoint[]>();
+  tickers.forEach((t, i) => {
+    if (lists[i].length) map.set(t, lists[i]);
+  });
   return map;
 }
 
@@ -155,8 +172,15 @@ export async function refreshPrices(
 
   for (let i = 0; i < tickers.length; i++) {
     const t = tickers[i];
-    const have = cached.get(t)?.length ?? 0;
-    const points = await fetchOne(t, have > 200 ? 5 : 400);
+    const series = cached.get(t);
+    const have = series?.length ?? 0;
+    // Top up every day missed since the last cached close, not just the last
+    // few - a ticker that went unrefreshed for weeks would otherwise keep a
+    // hole in its history. Credits are per symbol, so a bigger window is free.
+    const gapDays = have
+      ? Math.ceil((Date.now() - new Date(series![have - 1].date).getTime()) / 86400000)
+      : 0;
+    const points = await fetchOne(t, have > 200 ? Math.min(400, Math.max(5, gapDays + 5)) : 400);
     if (points && points.length) {
       await writeCache(points.map((p) => ({ ticker: t, date: p.date, close: p.close })));
       updated.push(t);
