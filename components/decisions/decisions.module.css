@@ -1,0 +1,105 @@
+/*
+  Decision Log — the few things Tailwind utilities can't express.
+  Colors are the app's own tokens (app/globals.css).
+*/
+
+/* a tab's content sliding in when it is opened or switched to */
+.panel {
+  animation: panel-in 0.26s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+@keyframes panel-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .panel {
+    animation: none;
+  }
+}
+
+/* the tab sticking up from a folder card */
+.folder {
+  position: relative;
+  margin-top: 0.75rem;
+}
+.folder::before {
+  content: "";
+  position: absolute;
+  top: -0.7rem;
+  left: 0;
+  width: 5.5rem;
+  height: 0.75rem;
+  border: 1px solid var(--line);
+  border-bottom: 0;
+  border-radius: 6px 10px 0 0;
+  background: var(--surface-2);
+}
+
+/* thesis text: the editor's output and the read-only view share these */
+.prose {
+  font-size: 0.875rem;
+  line-height: 1.65;
+  color: var(--ink);
+}
+.prose :global(.ProseMirror) {
+  min-height: 16rem;
+  outline: none;
+}
+.prose h2,
+.prose h3 {
+  margin: 1.4em 0 0.4em;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.prose h2 { font-size: 1.05rem; }
+.prose h3 { font-size: 0.95rem; }
+.prose h2:first-child,
+.prose h3:first-child {
+  margin-top: 0;
+}
+.prose p {
+  margin: 0.5em 0;
+}
+.prose ul,
+.prose ol {
+  margin: 0.5em 0;
+  padding-left: 1.4em;
+}
+.prose ul { list-style: disc; }
+.prose ol { list-style: decimal; }
+.prose li p {
+  margin: 0.15em 0;
+}
+.prose blockquote {
+  margin: 0.8em 0;
+  border-left: 3px solid var(--line-strong);
+  padding-left: 0.9em;
+  color: var(--muted);
+}
+.prose code {
+  border-radius: 4px;
+  background: var(--surface-2);
+  padding: 0.1em 0.3em;
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+}
+.prose pre {
+  margin: 0.8em 0;
+  overflow-x: auto;
+  border-radius: 6px;
+  background: var(--surface-2);
+  padding: 0.75em 1em;
+}
+.prose pre code {
+  background: none;
+  padding: 0;
+}
+.prose hr {
+  margin: 1.2em 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+}
+.prose a {
+  color: var(--brand);
+  text-decoration: underline;
+}
