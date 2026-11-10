@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getCurrentFundValue } from "@/lib/fund";
+import { todayET } from "@/lib/live";
 import { refreshDaily } from "@/lib/prices";
 import { upsertFundValueSnapshot } from "@/lib/store";
 import { trackedTickers } from "@/lib/tickers";
@@ -28,7 +29,9 @@ export const maxDuration = 300;
 async function recordSnapshot() {
   const { fundValue, investedValue, cashBalance } = await getCurrentFundValue();
   await upsertFundValueSnapshot({
-    date: new Date().toISOString().slice(0, 10),
+    // the market's calendar day, not UTC's: a manual run at 8pm Eastern still
+    // belongs to today's session
+    date: todayET(),
     fundValue,
     investedValue,
     cashBalance,
