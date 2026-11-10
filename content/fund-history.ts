@@ -131,9 +131,9 @@ export const stats: Stat[] = [
   {
     id: "sleeves",
     label: "Strategy sleeves",
-    value: 5,
+    value: 4,
     placeholder: "[ADD NUMBER OF SLEEVES]",
-    note: "VPIS, MOM, BHAC, HE, AW",
+    note: "VPIS, MOM, BHAC, HE",
   },
   {
     id: "students",
@@ -270,7 +270,7 @@ export const eras: Era[] = [
     summary:
       "The fund holds roughly $300K+ and is run by students in the Portfolio Management course, with Dr. Brad Andrew as faculty advisor.",
     points: [
-      "Five strategy sleeves: VPIS, MOM, BHAC, HE and AW.",
+      "Four strategy sleeves: VPIS, MOM, BHAC and HE.",
       "Benchmark: 80% ACWI and 20% AGG.",
       "Trades are proposed, voted on and recorded in the Eagle Fund Tracker.",
     ],
@@ -280,10 +280,9 @@ export const eras: Era[] = [
 // The sleeves shown under "Today". Add what each code stands for.
 export const sleeves: { code: string; name: string }[] = [
   { code: "VPIS", name: "[ADD FULL NAME]" },
-  { code: "MOM", name: "[ADD FULL NAME]" },
-  { code: "BHAC", name: "[ADD FULL NAME]" },
+  { code: "MOM", name: "Momentum" }, // as named in the tracker
+  { code: "BHAC", name: "Buy & Hold Asset Class" }, // as named in the tracker
   { code: "HE", name: "[ADD FULL NAME]" },
-  { code: "AW", name: "[ADD FULL NAME]" },
 ];
 
 // ---- Alumni ----------------------------------------------------------------
