@@ -1,16 +1,19 @@
 // Market data — Twelve Data, with the daily closes cached in the `price_cache`
 // table so repeated views don't burn API credits.
 //
-//   getSeries(ticker)     -> daily closes (cache first, then API, then synthetic)
-//   warmCache(tickers)    -> one batched fetch for everything missing fresh data
-//   getQuote / getQuotes  -> derived from the series + a light /quote call for name
+//   getSeries(ticker)     -> daily closes (cache first, then API; never invented)
+//   warmCache(tickers)    -> first-time fetch for tickers with nothing cached
+//   refreshDaily(tickers) -> the evening job: every ticker's latest close
+//   getQuote / getQuotes  -> derived from the series, with the intraday quote
+//                            from lib/live.ts on top while one is newer
 //   getHistory            -> a slice of the series
 //   getNews               -> best effort; [] if the plan doesn't include news
 //
-// Free-tier Twelve Data is 8 requests/minute, 800 credits/day. We batch up to 8
-// symbols per request and only fetch tickers whose cache is stale.
+// Free-tier Twelve Data is 8 credits/minute, 800 credits/day, one credit per
+// symbol.
 
 import "server-only";
+import { isRegularSession, lastCompletedSession, readLiveQuotes, todayET, type LiveQuote } from "./live";
 import { admin } from "./supabase/admin";
 import type { NewsItem, PricePoint, PriceQuote } from "./types";
 
@@ -33,6 +36,7 @@ const KNOWN: Record<string, TickerMeta> = {
   VISGX: { name: "Vanguard Small-Cap Growth Index Fund", cap: null, pe: null, yield: 0.006 },
   AAPL: { name: "Apple Inc.", cap: 3.5e12, pe: 33, yield: 0.005 },
   GOOGL: { name: "Alphabet Inc. Class A", cap: 2.5e12, pe: 21, yield: 0.004 },
+  GOOG: { name: "Alphabet Inc. Class C", cap: 2.5e12, pe: 21, yield: 0.004 },
   SCHW: { name: "The Charles Schwab Corporation", cap: 1.5e11, pe: 20, yield: 0.014 },
   AMZN: { name: "Amazon.com, Inc.", cap: 2.0e12, pe: 38, yield: null },
   UBER: { name: "Uber Technologies, Inc.", cap: 1.6e11, pe: 22, yield: null },
@@ -122,9 +126,12 @@ async function fetchOne(symbol: string, outputsize: number): Promise<PricePoint[
       values?: { datetime: string; close: string }[];
     };
     if (j.status !== "ok" || !j.values) return null; // rate-limited or unknown symbol
+    // While the session is open, today's bar is a moving price, not a close -
+    // keep it out of the cache (lib/live.ts is what shows intraday prices).
+    const unfinished = isRegularSession() ? todayET() : null;
     return j.values
       .map((v) => ({ date: v.datetime.slice(0, 10), close: Number(v.close) }))
-      .filter((v) => Number.isFinite(v.close))
+      .filter((v) => Number.isFinite(v.close) && v.date !== unfinished)
       .sort((a, b) => a.date.localeCompare(b.date));
   } catch {
     return null;
@@ -135,7 +142,7 @@ async function fetchOne(symbol: string, outputsize: number): Promise<PricePoint[
  * Best-effort top-up used during a page render: only fetches tickers that have
  * NOTHING cached, and only a handful, so a render never stalls on the API or
  * trips the 8-credit/minute free-tier limit. Day-to-day freshness is the job of
- * refreshPrices() on a schedule.
+ * refreshDaily() on a schedule.
  */
 export async function warmCache(rawTickers: string[]): Promise<void> {
   const tickers = [...new Set(rawTickers.map(normalize))].filter(Boolean);
@@ -153,69 +160,70 @@ export async function warmCache(rawTickers: string[]): Promise<void> {
   await writeCache(rows);
 }
 
-/**
- * Full refresh for a scheduled job (Vercel Cron -> /api/refresh-prices). Walks
- * the ticker list one request at a time, pausing to stay under ~7 credits/minute.
- * `outputsize` is small for tickers already cached (just top up recent closes),
- * large for new ones.
- */
-export async function refreshPrices(
-  rawTickers: string[],
-  opts: { perMinute?: number } = {},
-): Promise<{ updated: string[]; skipped: string[] }> {
-  const tickers = [...new Set(rawTickers.map(normalize))].filter(Boolean);
-  const perMinute = opts.perMinute ?? 7;
-  const gapMs = Math.ceil(60000 / perMinute);
-  const cached = await readCache(tickers);
-  const updated: string[] = [];
-  const skipped: string[] = [];
+const BURST = 7; // of the 8 credits/minute - one spare for a search or name lookup
+const BURST_GAP_MS = 62_000;
 
-  for (let i = 0; i < tickers.length; i++) {
-    const t = tickers[i];
-    const series = cached.get(t);
-    const have = series?.length ?? 0;
-    // Top up every day missed since the last cached close, not just the last
-    // few - a ticker that went unrefreshed for weeks would otherwise keep a
-    // hole in its history. Credits are per symbol, so a bigger window is free.
-    const gapDays = have
-      ? Math.ceil((Date.now() - new Date(series![have - 1].date).getTime()) / 86400000)
-      : 0;
-    const points = await fetchOne(t, have > 200 ? Math.min(400, Math.max(5, gapDays + 5)) : 400);
-    if (points && points.length) {
-      await writeCache(points.map((p) => ({ ticker: t, date: p.date, close: p.close })));
-      updated.push(t);
-    } else {
-      skipped.push(t);
-    }
-    if (i < tickers.length - 1) await new Promise((r) => setTimeout(r, gapMs));
-  }
-  return { updated, skipped };
+/** Fetches and caches the closes one ticker is missing. */
+async function topUp(ticker: string, series: PricePoint[] | undefined): Promise<boolean> {
+  const have = series?.length ?? 0;
+  // Ask for every day missed since the last cached close, not just the last
+  // few - a ticker that went unrefreshed for weeks would otherwise keep a
+  // hole in its history. Credits are per symbol, so a bigger window is free.
+  const gapDays = have
+    ? Math.ceil((Date.now() - new Date(series![have - 1].date).getTime()) / 86400000)
+    : 0;
+  const points = await fetchOne(ticker, have > 200 ? Math.min(400, Math.max(5, gapDays + 5)) : 400);
+  if (!points?.length) return false;
+  await writeCache(points.map((p) => ({ ticker, date: p.date, close: p.close })));
+  return true;
 }
 
 /**
- * Refreshes at most `max` tickers, worst-cached first — sized to finish inside a
- * serverless function's time limit. Called hourly by /api/refresh-prices and by
- * the "Refresh prices" button on the Admin page. Run it a few times and the
- * whole set becomes current.
+ * Brings every ticker that is missing the last completed session's close up
+ * to date. Twelve Data's limit is per minute, not per request, so this fires
+ * up to BURST requests at once and then waits out the minute - the full
+ * tracked set takes a few minutes. Called by the evening cron
+ * (/api/refresh-prices) and the "Refresh prices" button on the Admin page.
+ *
+ * `max` caps how many tickers one call touches (the button passes a single
+ * burst so it returns straight away); `force` re-fetches tickers that are
+ * already current; `afterFirstBurst` runs once if more bursts are to come.
+ * A multi-burst run gives tickers that failed (usually the rate limit, shared
+ * with live quotes and searches) one more try at the end.
  */
-export async function refreshStale(
+export async function refreshDaily(
   rawTickers: string[],
-  max = 6,
+  opts: { max?: number; force?: boolean; afterFirstBurst?: () => Promise<void> } = {},
 ): Promise<{ updated: string[]; skipped: string[]; remaining: number }> {
   const tickers = [...new Set(rawTickers.map(normalize))].filter(Boolean);
   const cached = await readCache(tickers);
-  const ranked = tickers
-    .map((t) => {
-      const series = cached.get(t);
-      const last = series?.length ? new Date(series[series.length - 1].date).getTime() : 0;
-      return { t, last, fresh: isFresh(series) };
-    })
-    .sort((a, b) => a.last - b.last);
+  const session = lastCompletedSession();
+  const behind = tickers.filter((t) => {
+    const series = cached.get(t);
+    return opts.force || !series || series.length < 60 || series[series.length - 1].date < session;
+  });
+  const batch = behind.slice(0, opts.max ?? behind.length);
+  const skipped: string[] = [];
 
-  const stale = ranked.filter((r) => !r.fresh).map((r) => r.t);
-  const batch = stale.slice(0, max);
-  const { updated, skipped } = await refreshPrices(batch);
-  return { updated, skipped, remaining: Math.max(0, stale.length - batch.length) };
+  const pause = () => new Promise((r) => setTimeout(r, BURST_GAP_MS));
+  const runBurst = async (burst: string[]) => {
+    const results = await Promise.all(burst.map((t) => topUp(t, cached.get(t))));
+    return burst.filter((_, k) => !results[k]);
+  };
+
+  for (let i = 0; i < batch.length; i += BURST) {
+    if (i > 0) await pause();
+    skipped.push(...(await runBurst(batch.slice(i, i + BURST))));
+    if (i === 0 && batch.length > BURST) await opts.afterFirstBurst?.();
+  }
+  if (skipped.length && batch.length > BURST) {
+    await pause();
+    const retry = skipped.splice(0, BURST);
+    skipped.push(...(await runBurst(retry)));
+  }
+  const failed = new Set(skipped);
+  const updated = batch.filter((t) => !failed.has(t));
+  return { updated, skipped, remaining: behind.length - batch.length };
 }
 
 export async function getSeries(ticker: string): Promise<PricePoint[]> {
@@ -314,9 +322,21 @@ async function lookupName(ticker: string): Promise<string> {
   return name;
 }
 
-function quoteFromSeries(ticker: string, series: PricePoint[], name: string, meta: TickerMeta | undefined): PriceQuote {
-  const price = series[series.length - 1]?.close ?? 0;
-  const previousClose = series[series.length - 2]?.close ?? price;
+function quoteFromSeries(
+  ticker: string,
+  series: PricePoint[],
+  name: string,
+  meta: TickerMeta | undefined,
+  live?: LiveQuote,
+): PriceQuote {
+  const last = series[series.length - 1];
+  // An intraday quote counts only while it is newer than the last recorded
+  // close - once the evening refresh lands that day's close, the close wins.
+  const intraday = live && (!last || live.quoteDate > last.date) ? live : null;
+  const price = intraday ? intraday.price : (last?.close ?? 0);
+  const previousClose = intraday
+    ? (intraday.prevClose ?? last?.close ?? price)
+    : (series[series.length - 2]?.close ?? price);
   const window = series.slice(-252).map((p) => p.close);
   return {
     ticker,
@@ -325,14 +345,14 @@ function quoteFromSeries(ticker: string, series: PricePoint[], name: string, met
     previousClose,
     changeAbs: Number((price - previousClose).toFixed(2)),
     changePct: previousClose ? Number((((price - previousClose) / previousClose) * 100).toFixed(2)) : 0,
-    dayHigh: Number((price * 1.01).toFixed(2)),
-    dayLow: Number((price * 0.99).toFixed(2)),
+    dayHigh: intraday?.dayHigh ?? Number((price * 1.01).toFixed(2)),
+    dayLow: intraday?.dayLow ?? Number((price * 0.99).toFixed(2)),
     yearHigh: window.length ? Math.max(...window) : price,
     yearLow: window.length ? Math.min(...window) : price,
     marketCap: meta?.cap ?? 0,
     peRatio: meta?.pe ?? null,
     dividendYield: meta?.yield ?? null,
-    asOf: new Date().toISOString(),
+    asOf: intraday ? intraday.fetchedAt : new Date().toISOString(),
   };
 }
 
@@ -343,20 +363,20 @@ function quoteFromSeries(ticker: string, series: PricePoint[], name: string, met
 // isn't expecting a lookup to fail.
 export async function getQuote(ticker: string): Promise<PriceQuote | null> {
   const t = normalize(ticker);
-  const [series, name] = await Promise.all([getSeries(t), lookupName(t)]);
+  const [series, name, live] = await Promise.all([getSeries(t), lookupName(t), readLiveQuotes([t])]);
   if (series.length === 0) return null;
-  return quoteFromSeries(t, series, name, KNOWN[t]);
+  return quoteFromSeries(t, series, name, KNOWN[t], live.get(t));
 }
 
 export async function getQuotes(tickers: string[]): Promise<Record<string, PriceQuote>> {
   const norm = [...new Set(tickers.map(normalize))].filter(Boolean);
   await warmCache(norm);
-  const cache = await readCache(norm);
+  const [cache, live] = await Promise.all([readCache(norm), readLiveQuotes(norm)]);
   const out: Record<string, PriceQuote> = {};
   await Promise.all(
     norm.map(async (t) => {
       const series = isFresh(cache.get(t)) ? cache.get(t)! : await getSeries(t);
-      out[t] = quoteFromSeries(t, series, await lookupName(t), KNOWN[t]);
+      out[t] = quoteFromSeries(t, series, await lookupName(t), KNOWN[t], live.get(t));
     }),
   );
   return out;

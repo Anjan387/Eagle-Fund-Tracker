@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireAdvisor } from "@/lib/auth";
-import { getQuote, refreshStale } from "@/lib/prices";
+import { getQuote, refreshDaily } from "@/lib/prices";
 import { trackedTickers } from "@/lib/tickers";
 import {
   addCashTransaction,
@@ -71,7 +71,7 @@ export async function saveSnapshot(
 
 export async function refreshPricesNow(): Promise<void> {
   await requireAdvisor();
-  await refreshStale(await trackedTickers(), 7);
+  await refreshDaily(await trackedTickers(), { max: 7 });
   revalidatePath("/overview");
   revalidatePath("/holdings");
   revalidatePath("/admin");

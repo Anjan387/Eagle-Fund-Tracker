@@ -16,6 +16,7 @@ drop table if exists public.trades         cascade;
 drop table if exists public.proposals      cascade;
 drop table if exists public.holdings       cascade;
 drop table if exists public.price_cache    cascade;
+drop table if exists public.live_quotes    cascade;
 drop table if exists public.fund_snapshots cascade;
 drop table if exists public.fund_meta      cascade;
 drop table if exists public.strategies     cascade;
@@ -147,6 +148,19 @@ create table public.price_cache (
   primary key (ticker, date)
 );
 
+-- ---- live quotes (one row per held ticker: the latest intraday quote, shown
+--      on top of price_cache while the market is open; see lib/live.ts) ----
+create table public.live_quotes (
+  ticker     text primary key,
+  price      numeric,
+  prev_close numeric,
+  day_high   numeric,
+  day_low    numeric,
+  quote_date date,                                             -- trading day the quote belongs to
+  fetched_at timestamptz,                                      -- last successful quote
+  claimed_at timestamptz not null default to_timestamp(0)      -- last attempt; throttles API use
+);
+
 -- ---- fund snapshots (manual yearly AUM totals) ------------------------
 create table public.fund_snapshots (
   year        integer primary key check (year between 2000 and 2100),
@@ -222,6 +236,7 @@ alter table public.cash_transactions enable row level security;
 alter table public.fund_value_history enable row level security;
 alter table public.proposal_attachments enable row level security;
 alter table public.proposal_votes enable row level security;
+alter table public.live_quotes enable row level security;
 
 -- signed-in users may read; nobody may write via the public API
 create policy "read for authenticated" on public.profiles          for select to authenticated using (true);
@@ -233,6 +248,7 @@ create policy "read for authenticated" on public.holding_notes     for select to
 create policy "read for authenticated" on public.proposal_attachments for select to authenticated using (true);
 create policy "read for authenticated" on public.proposal_votes for select to authenticated using (true);
 create policy "read for authenticated" on public.price_cache       for select to authenticated using (true);
+create policy "read for authenticated" on public.live_quotes       for select to authenticated using (true);
 create policy "read for authenticated" on public.fund_snapshots    for select to authenticated using (true);
 create policy "read for authenticated" on public.fund_meta         for select to authenticated using (true);
 create policy "read for authenticated" on public.cash_transactions for select to authenticated using (true);

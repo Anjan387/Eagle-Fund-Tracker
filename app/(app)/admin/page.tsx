@@ -182,7 +182,7 @@ export default async function AdminPage() {
       <Card>
         <CardHeader
           title="Market prices"
-          description="Daily closes from Twelve Data, cached in the database. A scheduled job tops these up once a day; this button refreshes the 7 most stale tickers now."
+          description="Daily closes from Twelve Data, cached in the database. A scheduled job brings every ticker up to date each evening; this button catches up as many as 7 that are behind right now. During market hours, Overview and Holdings also show live quotes for what the fund holds."
         />
         <div className="flex flex-wrap items-center gap-4 px-5 py-5">
           <form action={refreshPricesNow}>

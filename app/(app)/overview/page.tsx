@@ -2,6 +2,7 @@ import { getFundOverview } from "@/lib/fund";
 import { money, money2, signedPct } from "@/lib/format";
 import { AllocationBars } from "@/components/AllocationBars";
 import { AumChart } from "@/components/charts/AumChart";
+import { LiveStatus } from "@/components/LiveStatus";
 import { Card, CardHeader, PageHeader, StatTile } from "@/components/ui";
 
 const RETURN_BASIS_LABEL: Record<string, string> = {
@@ -18,6 +19,7 @@ export default async function OverviewPage() {
       <PageHeader
         title="Overview"
         description="Live valuation of the shadow ledger against the fund's 80/20 ACWI/AGG benchmark. Holdings, cash, trailing returns, and the benchmark all recalculate automatically — see Admin for the basis of each and to set a correction if one is ever needed."
+        action={<LiveStatus />}
       />
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -84,8 +86,9 @@ export default async function OverviewPage() {
               />
             </div>
             <p className="text-[11px] text-faint">
-              Valued at the latest daily close from Twelve Data. Cost basis is the sum of
-              recorded buy trades.
+              Valued at live quotes from Twelve Data while the market is open (mutual funds
+              price once a day), and at the latest daily close otherwise. Cost basis is the
+              sum of recorded buy trades.
             </p>
           </div>
         </Card>
