@@ -1,8 +1,9 @@
 import { requireUser } from "@/lib/auth";
-import { longDate, money, money2 } from "@/lib/format";
+import { knownCompanyName } from "@/lib/prices";
 import { getProposals, getStrategies, getTrades, getUsers } from "@/lib/store";
-import { Badge, Card, CardHeader, EmptyState, PageHeader } from "@/components/ui";
+import { Card, CardHeader, PageHeader } from "@/components/ui";
 import { AddTradeForm } from "./AddTradeForm";
+import { TradeLog } from "./TradeLog";
 
 export default async function TransactionsPage() {
   const [user, trades, strategies, users, proposals] = await Promise.all([
@@ -42,57 +43,23 @@ export default async function TransactionsPage() {
         </p>
       )}
 
-      <Card className="overflow-hidden">
-        <CardHeader title={`Trade log (${trades.length})`} description="Most recent first." />
-        {trades.length === 0 ? (
-          <div className="p-5">
-            <EmptyState title="No trades recorded yet" />
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[820px] text-sm">
-              <thead>
-                <tr className="border-b border-line text-left text-[11px] uppercase tracking-wide text-faint">
-                  <th className="px-4 py-2.5 font-medium">Date</th>
-                  <th className="px-4 py-2.5 font-medium">Action</th>
-                  <th className="px-4 py-2.5 font-medium">Ticker</th>
-                  <th className="px-4 py-2.5 text-right font-medium">Shares</th>
-                  <th className="px-4 py-2.5 text-right font-medium">Price</th>
-                  <th className="px-4 py-2.5 text-right font-medium">Value</th>
-                  <th className="px-4 py-2.5 font-medium">Strategy</th>
-                  <th className="px-4 py-2.5 font-medium">Entered by</th>
-                </tr>
-              </thead>
-              <tbody>
-                {trades.map((t) => (
-                  <tr key={t.id} className="border-b border-line last:border-0 align-top">
-                    <td className="px-4 py-3 tnum whitespace-nowrap text-muted">
-                      {longDate(t.tradeDate)}
-                    </td>
-                    <td className="px-4 py-3">
-                      <Badge tone={t.action === "buy" ? "pos" : "neg"}>{t.action.toUpperCase()}</Badge>
-                    </td>
-                    <td className="px-4 py-3 font-semibold text-ink">{t.ticker}</td>
-                    <td className="px-4 py-3 text-right tnum">{t.shares.toLocaleString()}</td>
-                    <td className="px-4 py-3 text-right tnum">{money2(t.price)}</td>
-                    <td className="px-4 py-3 text-right tnum">{money(t.shares * t.price)}</td>
-                    <td className="px-4 py-3 text-muted">{stratName.get(t.strategyId)}</td>
-                    <td className="px-4 py-3 text-muted">
-                      {userName.get(t.enteredBy) ?? "—"}
-                      <span className="block text-[11px] text-faint">
-                        {t.source === "approved_proposal" ? "from proposal" : "advisor entry"}
-                      </span>
-                      {t.notes ? (
-                        <span className="mt-1 block max-w-xs text-[11px] text-faint">{t.notes}</span>
-                      ) : null}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </Card>
+      <TradeLog
+        strategies={strategies.map((st) => ({ id: st.id, name: st.name }))}
+        rows={trades.map((t) => ({
+          id: t.id,
+          date: t.tradeDate,
+          action: t.action,
+          ticker: t.ticker,
+          company: knownCompanyName(t.ticker),
+          shares: t.shares,
+          price: t.price,
+          strategyId: t.strategyId,
+          strategy: stratName.get(t.strategyId) ?? "",
+          enteredBy: userName.get(t.enteredBy) ?? "—",
+          fromProposal: t.source === "approved_proposal",
+          notes: t.notes ?? null,
+        }))}
+      />
     </div>
   );
 }

@@ -305,6 +305,11 @@ export async function getHistoricalClose(ticker: string, date: string): Promise<
 
 // name lookup for tickers not in KNOWN (cached for the life of the process)
 const nameCache = new Map<string, string>();
+/** The company's name if it is one the app already knows - no API call, so it is safe to use for a whole list. */
+export function knownCompanyName(rawTicker: string): string | null {
+  return KNOWN[normalize(rawTicker)]?.name ?? null;
+}
+
 async function lookupName(ticker: string): Promise<string> {
   if (KNOWN[ticker]) return KNOWN[ticker].name;
   if (nameCache.has(ticker)) return nameCache.get(ticker)!;
