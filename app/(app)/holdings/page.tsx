@@ -2,43 +2,19 @@ import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { getHoldingRows } from "@/lib/fund";
 import { longDate, money, money2, signedPct } from "@/lib/format";
-import { getNotesForHolding, getStrategies, getUsers } from "@/lib/store";
+import { getStrategies } from "@/lib/store";
 import { LiveStatus } from "@/components/LiveStatus";
-import { Badge, Card, EmptyState, PageHeader } from "@/components/ui";
+import { Card, EmptyState, PageHeader } from "@/components/ui";
 import { StockSearch } from "@/components/StockSearch";
-import { HoldingNotes, type NoteView } from "./HoldingNotes";
 
 export default async function HoldingsPage() {
-  const [user, rows, strategies, users] = await Promise.all([
-    requireUser(),
-    getHoldingRows(),
-    getStrategies(),
-    getUsers(),
-  ]);
-  const userName = new Map(users.map((u) => [u.id, u.name]));
-
-  const notesByHolding = new Map<string, NoteView[]>();
-  await Promise.all(
-    rows.map(async (r) => {
-      const notes = await getNotesForHolding(r.id);
-      notesByHolding.set(
-        r.id,
-        notes.map((n) => ({
-          id: n.id,
-          body: n.body,
-          authorId: n.author,
-          authorName: userName.get(n.author) ?? "Unknown",
-          updatedAt: n.updatedAt,
-        })),
-      );
-    }),
-  );
+  const [, rows, strategies] = await Promise.all([requireUser(), getHoldingRows(), getStrategies()]);
 
   return (
     <div className="flex flex-col gap-8">
       <PageHeader
         title="Holdings"
-        description="Open positions in the shadow ledger, grouped by strategy and priced from Twelve Data — live quotes while the market is open, the latest daily close otherwise. Any PM can attach a thesis note."
+        description="Open positions in the shadow ledger, grouped by strategy and priced from Twelve Data — live quotes while the market is open, the latest daily close otherwise."
         action={<LiveStatus />}
       />
 
@@ -111,25 +87,6 @@ export default async function HoldingsPage() {
                 </table>
               </div>
             </Card>
-
-            <div className="grid gap-3 lg:grid-cols-2">
-              {stratRows.map((r) => (
-                <Card key={r.id} className="px-4 py-4">
-                  <div className="mb-2 flex items-center justify-between">
-                    <span className="text-xs font-semibold text-ink">
-                      {r.ticker} · thesis notes
-                    </span>
-                    <Badge tone={r.gainAbs >= 0 ? "pos" : "neg"}>{signedPct(r.gainPct)}</Badge>
-                  </div>
-                  <HoldingNotes
-                    holdingId={r.id}
-                    notes={notesByHolding.get(r.id) ?? []}
-                    currentUserId={user.id}
-                    canModerate={user.role === "advisor"}
-                  />
-                </Card>
-              ))}
-            </div>
           </section>
         );
       })}
