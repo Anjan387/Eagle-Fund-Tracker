@@ -147,8 +147,7 @@ export default async function PrintDecisionPage({ params }: { params: Promise<{ 
         )}
 
         <p className="mt-10 border-t border-neutral-300 pt-3 text-xs text-neutral-500">
-          Last edited by {person(d.updatedBy)} on {longDate(d.updatedAt.slice(0, 10))}. Exported from the Eagle Fund
-          Tracker.
+          Last edited by {person(d.updatedBy)} on {longDate(d.updatedAt.slice(0, 10))}. Exported from Eagle Fund.
         </p>
       </main>
     </div>

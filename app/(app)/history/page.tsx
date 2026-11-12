@@ -31,7 +31,7 @@ import styles from "@/components/history/history.module.css";
 // the only live figures are today's fund value, the number of holdings, and
 // the year-by-year values the Overview chart already uses.
 
-export const metadata: Metadata = { title: "Fund History · Eagle Fund Tracker" };
+export const metadata: Metadata = { title: "Fund History · Eagle Fund" };
 
 const SECTIONS: NavSection[] = [
   { id: "top", label: "Start" },

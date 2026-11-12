@@ -16,7 +16,7 @@ export default async function LoginPage() {
             EF
           </span>
           <div>
-            <h1 className="text-lg font-semibold tracking-tight text-ink">Eagle Fund Tracker</h1>
+            <h1 className="text-lg font-semibold tracking-tight text-ink">Eagle Fund</h1>
             <p className="text-xs text-muted">Juniata College · student-managed fund</p>
           </div>
         </div>

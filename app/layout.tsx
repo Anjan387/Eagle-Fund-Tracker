@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Eagle Fund Tracker",
+  title: "Eagle Fund",
   description:
     "Shadow ledger and research desk for the Eagle Fund, Juniata College's student-managed investment fund.",
 };

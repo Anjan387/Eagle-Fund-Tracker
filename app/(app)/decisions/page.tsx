@@ -10,7 +10,7 @@ import type { VoteTally } from "@/components/decisions/DecisionDetail";
 // `decisions` and `decision_documents` tables; the files themselves are in the
 // private "decision-documents" Storage bucket (see lib/decisions.ts).
 
-export const metadata: Metadata = { title: "Decision Log · Eagle Fund Tracker" };
+export const metadata: Metadata = { title: "Decision Log · Eagle Fund" };
 
 export default async function DecisionsPage() {
   const [user, log, strategies, users, proposals, trades] = await Promise.all([

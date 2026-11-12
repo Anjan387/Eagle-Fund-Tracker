@@ -21,7 +21,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
             <span className="grid h-6 w-6 place-items-center rounded bg-brand text-[10px] font-bold text-brand-contrast">
               EF
             </span>
-            <span className="text-sm font-semibold text-ink">Eagle Fund Tracker</span>
+            <span className="text-sm font-semibold text-ink">Eagle Fund</span>
           </span>
           <span className="text-xs text-muted group-open:hidden">Menu</span>
           <span className="hidden text-xs text-muted group-open:inline">Close</span>
