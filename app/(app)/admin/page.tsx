@@ -6,6 +6,7 @@ import { getFundOverview } from "@/lib/fund";
 import { getCashTransactions, getHoldings, getMeta, getSnapshots, getUsers } from "@/lib/store";
 import { Badge, Card, CardHeader, PageHeader, SubmitButton } from "@/components/ui";
 import { AddPmForm, CashEventForm, DividendForm, ReturnsForm, SnapshotForm } from "./AdminForms";
+import { EditMember } from "./EditMember";
 
 const CASH_KIND_LABEL: Record<string, string> = {
   deposit: "Deposit",
@@ -18,7 +19,7 @@ const CASH_KIND_LABEL: Record<string, string> = {
 };
 
 export default async function AdminPage() {
-  await requireAdvisor();
+  const me = await requireAdvisor();
   const [users, snapshots, meta, overview, cashTransactions, holdings, priceMeta] = await Promise.all([
     getUsers(),
     getSnapshots(),
@@ -33,7 +34,7 @@ export default async function AdminPage() {
       .limit(1)
       .maybeSingle(),
   ]);
-  const pms = users.filter((u) => u.role === "pm");
+  const team = [...users].sort((a, b) => (a.role === b.role ? a.name.localeCompare(b.name) : a.role === "advisor" ? -1 : 1));
   const newestPrice = priceMeta.data?.date as string | undefined;
   const holdingTickers = [...new Set(holdings.map((h) => h.ticker))].sort();
 
@@ -50,12 +51,13 @@ export default async function AdminPage() {
       </Card>
 
       <Card className="overflow-hidden">
-        <CardHeader title={`Portfolio managers (${pms.length})`} description="Deactivate accounts when a PM finishes the course — their notes and proposals are kept." />
+        <CardHeader title={`Team (${team.length})`} description="Edit a name, email or role, or deactivate an account when a PM finishes the course — their proposals and votes are kept." />
         <div className="overflow-x-auto">
           <table className="w-full min-w-[560px] text-sm">
             <thead>
               <tr className="border-b border-line text-left text-[11px] uppercase tracking-wide text-faint">
                 <th className="px-4 py-2.5 font-medium">Name</th>
+                <th className="px-4 py-2.5 font-medium">Role</th>
                 <th className="px-4 py-2.5 font-medium">Email</th>
                 <th className="px-4 py-2.5 font-medium">Added</th>
                 <th className="px-4 py-2.5 font-medium">Status</th>
@@ -63,25 +65,34 @@ export default async function AdminPage() {
               </tr>
             </thead>
             <tbody>
-              {pms.map((u) => (
+              {team.map((u) => (
                 <tr key={u.id} className="border-b border-line last:border-0">
                   <td className="px-4 py-3 font-medium text-ink">{u.name}</td>
+                  <td className="px-4 py-3 text-muted">{u.role === "advisor" ? "Faculty advisor" : "Portfolio manager"}</td>
                   <td className="px-4 py-3 tnum text-muted">{u.email}</td>
                   <td className="px-4 py-3 text-muted">{longDate(u.createdAt)}</td>
                   <td className="px-4 py-3">
                     <Badge tone={u.active ? "pos" : "neutral"}>{u.active ? "active" : "inactive"}</Badge>
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <form action={toggleUserActive}>
-                      <input type="hidden" name="userId" value={u.id} />
-                      <input type="hidden" name="active" value={u.active ? "false" : "true"} />
-                      <button
-                        type="submit"
-                        className="rounded-md border border-line-strong px-2.5 py-1 text-xs text-muted hover:bg-surface-2 hover:text-ink"
-                      >
-                        {u.active ? "Deactivate" : "Reactivate"}
-                      </button>
-                    </form>
+                    <div className="flex flex-wrap items-center justify-end gap-2">
+                      <EditMember
+                        user={{ id: u.id, name: u.name, email: u.email, role: u.role }}
+                        isSelf={u.id === me.id}
+                      />
+                      {u.role === "pm" ? (
+                        <form action={toggleUserActive}>
+                          <input type="hidden" name="userId" value={u.id} />
+                          <input type="hidden" name="active" value={u.active ? "false" : "true"} />
+                          <button
+                            type="submit"
+                            className="rounded-md border border-line-strong px-2.5 py-1 text-xs text-muted hover:bg-surface-2 hover:text-ink"
+                          >
+                            {u.active ? "Deactivate" : "Reactivate"}
+                          </button>
+                        </form>
+                      ) : null}
+                    </div>
                   </td>
                 </tr>
               ))}

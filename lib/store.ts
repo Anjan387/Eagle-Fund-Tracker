@@ -443,6 +443,31 @@ export async function createUser(input: {
   return { user: rowToUser(data), tempPassword };
 }
 
+/**
+ * Changes a person's name, email or role. An email change also changes the
+ * address they sign in with. Callers check who is allowed to do what.
+ */
+export async function updateUserProfile(
+  userId: string,
+  changes: { name?: string; email?: string; role?: User["role"] },
+): Promise<User | null> {
+  if (changes.email !== undefined) {
+    const { error } = await admin().auth.admin.updateUserById(userId, {
+      email: changes.email,
+      email_confirm: true,
+    });
+    if (error) throw new Error(`Couldn't change the sign-in email: ${error.message}`);
+  }
+  const { data, error } = await admin()
+    .from("profiles")
+    .update(changes)
+    .eq("id", userId)
+    .select("*")
+    .maybeSingle();
+  if (error) throw new Error(`updateUserProfile: ${error.message}`);
+  return data ? rowToUser(data) : null;
+}
+
 export async function setUserActive(userId: string, active: boolean) {
   const { data } = await admin()
     .from("profiles")

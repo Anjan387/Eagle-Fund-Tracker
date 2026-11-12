@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useRef } from "react";
-import { changePassword, type AccountFormState } from "@/app/actions/account";
+import { changePassword, updateMyName, type AccountFormState } from "@/app/actions/account";
 import { FieldError, FormOk, inputClass, labelClass, SubmitButton } from "@/components/ui";
 
 const initial: AccountFormState = {};
@@ -51,6 +51,27 @@ export function ChangePasswordForm() {
       {state.ok ? <FormOk>Password updated.</FormOk> : null}
       <SubmitButton pending={pending} className="self-start">
         Update password
+      </SubmitButton>
+    </form>
+  );
+}
+
+export function ChangeNameForm({ name }: { name: string }) {
+  const [state, action, pending] = useActionState(updateMyName, initial);
+  return (
+    <form action={action} className="flex max-w-sm flex-col gap-4">
+      <label className="flex flex-col gap-1.5">
+        <span className={labelClass}>Your name</span>
+        <input name="name" defaultValue={name} required minLength={2} maxLength={100} autoComplete="name" className={inputClass} />
+        <span className="text-[11px] text-faint">
+          This is how your name appears on proposals, votes and the decision log. To change your email or role, ask the
+          faculty advisor.
+        </span>
+      </label>
+      <FieldError>{state.error}</FieldError>
+      {state.ok ? <FormOk>Name updated.</FormOk> : null}
+      <SubmitButton pending={pending} variant="ghost" className="self-start">
+        Save name
       </SubmitButton>
     </form>
   );

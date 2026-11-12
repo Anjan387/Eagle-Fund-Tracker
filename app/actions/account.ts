@@ -1,11 +1,31 @@
 "use server";
 
 import { requireUser } from "@/lib/auth";
+import { revalidatePath } from "next/cache";
 import { getSessionClient } from "@/lib/supabase/server";
+import { updateUserProfile } from "@/lib/store";
 
 export interface AccountFormState {
   error?: string;
   ok?: boolean;
+}
+
+/** Anyone can correct how their own name is spelled. Email and role are the advisor's to change. */
+export async function updateMyName(
+  _prev: AccountFormState,
+  formData: FormData,
+): Promise<AccountFormState> {
+  const user = await requireUser();
+  const name = String(formData.get("name") ?? "").replace(/\s+/g, " ").trim();
+  if (name.length < 2) return { error: "Enter your full name." };
+  if (name.length > 100) return { error: "That name is too long." };
+  try {
+    await updateUserProfile(user.id, { name });
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Couldn't save your name." };
+  }
+  revalidatePath("/", "layout");
+  return { ok: true };
 }
 
 export async function changePassword(

@@ -10,6 +10,9 @@ import {
   createUser,
   getHoldings,
   getUserByEmail,
+  getUserById,
+  getUsers,
+  updateUserProfile,
   setMeta,
   setUserActive,
   upsertSnapshot,
@@ -44,6 +47,53 @@ export async function addPmAccount(
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Could not create the account." };
   }
+}
+
+/** The advisor edits anyone's name, email or role. */
+export async function updateTeamMember(
+  _prev: AdminFormState,
+  formData: FormData,
+): Promise<AdminFormState> {
+  await requireAdvisor();
+  const userId = String(formData.get("userId") ?? "");
+  const name = String(formData.get("name") ?? "").replace(/\s+/g, " ").trim();
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const role = String(formData.get("role") ?? "");
+
+  const target = await getUserById(userId);
+  if (!target) return { error: "That account no longer exists." };
+  if (name.length < 2 || name.length > 100) return { error: "Enter the person's full name." };
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return { error: "Enter a valid email address." };
+  if (role !== "advisor" && role !== "pm") return { error: "Choose a role." };
+
+  const owner = email !== target.email.toLowerCase() ? await getUserByEmail(email) : null;
+  if (owner && owner.id !== target.id) return { error: "Another account already uses that email." };
+
+  // the fund must always keep someone who can approve trades and manage accounts
+  if (target.role === "advisor" && role === "pm") {
+    const users = await getUsers();
+    const others = users.filter((u) => u.role === "advisor" && u.active && u.id !== target.id);
+    if (others.length === 0) return { error: "That's the only active faculty advisor, so the role can't be changed." };
+  }
+
+  const changes: { name?: string; email?: string; role?: "advisor" | "pm" } = {};
+  if (name !== target.name) changes.name = name;
+  if (email !== target.email.toLowerCase()) changes.email = email;
+  if (role !== target.role) changes.role = role;
+  if (Object.keys(changes).length === 0) return { ok: true, message: "Nothing to change." };
+
+  try {
+    await updateUserProfile(userId, changes);
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Couldn't save the changes." };
+  }
+  revalidatePath("/", "layout");
+  return {
+    ok: true,
+    message: changes.email
+      ? `Saved. ${name} now signs in with ${email}; their password is unchanged.`
+      : "Saved.",
+  };
 }
 
 export async function toggleUserActive(formData: FormData): Promise<void> {
