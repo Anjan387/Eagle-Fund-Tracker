@@ -1,6 +1,7 @@
 import styles from "./history.module.css";
 
-const PLACEHOLDER = /(\[ADD [^\]]+\])/;
+// [ADD ...] on the Fund History page; the IPS page also uses [TO DECIDE: Qn] and a few blanks
+const PLACEHOLDER = /(\[(?:ADD|TO DECIDE|DATE|FOR|AGAINST|ABSTAIN|SIGNATURE)[^\]]*\])/;
 
 /** True for text that is nothing but an unfilled [ADD ...] placeholder. */
 export function isPlaceholder(text: string): boolean {

@@ -13,6 +13,7 @@ const NAV: { href: string; label: string; roles: Role[]; group: "fund" | "desk" 
   { href: "/transactions", label: "Transactions", roles: ["advisor", "pm"], group: "fund" },
   { href: "/proposals", label: "Proposals", roles: ["advisor", "pm"], group: "fund" },
   { href: "/decisions", label: "Decision Log", roles: ["advisor", "pm"], group: "fund" },
+  { href: "/ips", label: "IPS & AI Policy", roles: ["advisor", "pm"], group: "fund" },
   { href: "/history", label: "Fund History", roles: ["advisor", "pm"], group: "fund" },
   { href: "/research", label: "Research", roles: ["advisor", "pm"], group: "desk" },
   { href: "/admin", label: "Admin", roles: ["advisor"], group: "admin" },
