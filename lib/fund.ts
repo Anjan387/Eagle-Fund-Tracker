@@ -60,7 +60,7 @@ export interface FundOverview {
 // return spanning this date would be comparing two different portfolios, so
 // "since-rebuild" is used as the interim figure instead, until a rolling
 // 12-month window no longer needs to cross it.
-const REBUILD_DATE = "2026-04-14";
+export const REBUILD_DATE = "2026-04-14";
 const BENCHMARK_WEIGHTS = { ACWI: 0.8, AGG: 0.2 } as const;
 
 export async function getHoldingRows(): Promise<HoldingRow[]> {

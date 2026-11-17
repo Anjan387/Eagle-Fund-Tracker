@@ -89,7 +89,31 @@ async function readSeries(ticker: string): Promise<PricePoint[]> {
     }
     if (!data || data.length < PAGE_ROWS) break;
   }
-  return series;
+  return recentRun(series);
+}
+
+const GAP_DAYS = 12; // no market closure lasts this long; a longer gap means separate fetches
+
+/**
+ * The cache also keeps a few isolated closes from old market episodes (the
+ * Analytics page's stress tests, via fetchCloses). Those must never be read as
+ * part of a ticker's daily history, so a series is only its most recent
+ * unbroken run of days. A run that is short AND stale is nothing but such
+ * fragments (a ticker only ever used as a stand-in for an old episode): it
+ * counts as nothing cached, so the ticker is fetched properly when needed.
+ */
+function recentRun(series: PricePoint[]): PricePoint[] {
+  let start = 0;
+  for (let i = series.length - 1; i > 0; i--) {
+    if (Date.parse(series[i].date) - Date.parse(series[i - 1].date) > GAP_DAYS * 86400000) {
+      start = i;
+      break;
+    }
+  }
+  const run = start ? series.slice(start) : series;
+  const last = run[run.length - 1];
+  if (run.length < 30 && last && Date.now() - Date.parse(last.date) > 60 * 86400000) return [];
+  return run;
 }
 
 async function readCache(tickers: string[]): Promise<Map<string, PricePoint[]>> {
@@ -266,12 +290,18 @@ export async function getHistoricalClose(ticker: string, date: string): Promise<
   if (exact) return Number(exact.close);
 
   // Nearest cached close on/after the date, in case it's already covered by
-  // the rolling cache (handles weekends/holidays landing on `date`).
+  // the rolling cache (handles weekends/holidays landing on `date`). Bounded to
+  // the following week: without the upper bound, a date from before the cache
+  // begins would match the cache's FIRST row, years later.
+  const end = new Date(date);
+  end.setDate(end.getDate() + 6);
+  const endDate = end.toISOString().slice(0, 10);
   const { data: nearby } = await admin()
     .from("price_cache")
     .select("close")
     .eq("ticker", t)
     .gte("date", date)
+    .lte("date", endDate)
     .order("date")
     .limit(1)
     .maybeSingle();
@@ -279,12 +309,8 @@ export async function getHistoricalClose(ticker: string, date: string): Promise<
 
   if (!KEY) return null;
   try {
-    const end = new Date(date);
-    end.setDate(end.getDate() + 6);
     const res = await fetch(
-      `${API}/time_series?symbol=${t}&interval=1day&start_date=${date}&end_date=${end
-        .toISOString()
-        .slice(0, 10)}&apikey=${KEY}`,
+      `${API}/time_series?symbol=${t}&interval=1day&start_date=${date}&end_date=${endDate}&apikey=${KEY}`,
       { cache: "no-store" },
     );
     const j = (await res.json()) as {
@@ -301,6 +327,60 @@ export async function getHistoricalClose(ticker: string, date: string): Promise<
   } catch {
     return null;
   }
+}
+
+/**
+ * Daily closes for one symbol between two dates (inclusive), straight from the
+ * API and written to the cache. One credit. Used by the Analytics page to
+ * price holdings in old market episodes that predate the rolling cache.
+ * Returns null if the request failed (rate limit, network) and [] if the API
+ * answered but has no data for that symbol in that range.
+ */
+export async function fetchCloses(
+  rawTicker: string,
+  start: string,
+  end: string,
+  /** which of the returned days to keep in the cache (default: all) */
+  keep: (date: string) => boolean = () => true,
+): Promise<PricePoint[] | null> {
+  const t = normalize(rawTicker);
+  if (!KEY || !t) return null;
+  // The API treats end_date as exclusive (it stops before that day's bar), so
+  // ask for one day more and trim, to really include `end`.
+  const after = new Date(end + "T00:00:00Z");
+  after.setUTCDate(after.getUTCDate() + 1);
+  const endExclusive = after.toISOString().slice(0, 10);
+  try {
+    const res = await fetch(
+      `${API}/time_series?symbol=${t}&interval=1day&start_date=${start}&end_date=${endExclusive}&apikey=${KEY}`,
+      { cache: "no-store" },
+    );
+    const j = (await res.json()) as {
+      status?: string;
+      code?: number;
+      values?: { datetime: string; close: string }[];
+    };
+    if (j.status === "ok" && j.values) {
+      const points = j.values
+        .map((v) => ({ date: v.datetime.slice(0, 10), close: Number(v.close) }))
+        .filter((v) => Number.isFinite(v.close) && v.close > 0 && v.date >= start && v.date <= end)
+        .sort((a, b) => a.date.localeCompare(b.date));
+      await writeCache(
+        points.filter((p) => keep(p.date)).map((p) => ({ ticker: t, date: p.date, close: p.close })),
+      );
+      return points;
+    }
+    // 400 = "no data is available on the specified dates"; 404 = unknown symbol.
+    // Anything else (429 rate limit, 5xx) may succeed later.
+    return j.code === 400 || j.code === 404 ? [] : null;
+  } catch {
+    return null;
+  }
+}
+
+/** The distribution yield the app knows for a ticker (a fraction, 0.02 = 2%), or null. */
+export function knownYield(rawTicker: string): number | null {
+  return KNOWN[normalize(rawTicker)]?.yield ?? null;
 }
 
 // name lookup for tickers not in KNOWN (cached for the life of the process)

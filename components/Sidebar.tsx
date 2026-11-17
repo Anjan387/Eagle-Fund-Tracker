@@ -10,6 +10,7 @@ import type { Role } from "@/lib/types";
 const NAV: { href: string; label: string; roles: Role[]; group: "fund" | "desk" | "admin" }[] = [
   { href: "/overview", label: "Overview", roles: ["advisor", "pm"], group: "fund" },
   { href: "/holdings", label: "Holdings", roles: ["advisor", "pm"], group: "fund" },
+  { href: "/analytics", label: "Analytics", roles: ["advisor", "pm"], group: "fund" },
   { href: "/transactions", label: "Transactions", roles: ["advisor", "pm"], group: "fund" },
   { href: "/proposals", label: "Proposals", roles: ["advisor", "pm"], group: "fund" },
   { href: "/decisions", label: "Decision Log", roles: ["advisor", "pm"], group: "fund" },

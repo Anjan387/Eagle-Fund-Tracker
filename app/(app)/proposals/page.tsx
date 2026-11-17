@@ -1,7 +1,10 @@
+import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { longDate, relativeTime } from "@/lib/format";
 import { getAttachments } from "@/lib/attachments";
+import { loadAnalytics, type ProposalImpact } from "@/lib/analytics/data";
 import { getProposals, getStrategies, getTrades, getUsers, getVotesForProposal } from "@/lib/store";
+import { ImpactTable } from "@/components/analytics/ImpactTable";
 import { Badge, Card, CardHeader, EmptyState, PageHeader } from "@/components/ui";
 import type { Proposal } from "@/lib/types";
 import { AttachmentsPanel, type AttachmentView } from "./AttachmentsPanel";
@@ -58,6 +61,22 @@ export default async function ProposalsPage() {
   const pending = proposals.filter((p) => p.status === "pending");
   const decided = proposals.filter((p) => p.status !== "pending");
 
+  // What each pending trade would do to the fund's risk (see the Analytics
+  // page). Skipped when nothing is pending; a failure here never blocks the page.
+  const impacts = new Map<string, ProposalImpact["result"]>();
+  let riskTickers: string[] = [];
+  if (pending.length > 0) {
+    try {
+      const analytics = await loadAnalytics("1y");
+      if (analytics.ok) {
+        riskTickers = analytics.base.tickers;
+        for (const i of analytics.proposals) impacts.set(i.proposalId, i.result);
+      }
+    } catch (e) {
+      console.error("proposals: risk impact unavailable:", e);
+    }
+  }
+
   function Item({ p }: { p: Proposal }) {
     return (
       <Card className="px-5 py-4">
@@ -91,6 +110,34 @@ export default async function ProposalsPage() {
             by {userName.get(p.decidedBy)} on {p.decidedAt ? longDate(p.decidedAt) : "—"}
             {p.decisionNote ? <p className="mt-1 whitespace-pre-wrap">{p.decisionNote}</p> : null}
           </div>
+        ) : null}
+
+        {p.status === "pending" && impacts.has(p.id) ? (
+          <details className="group mt-3 rounded-md border border-line">
+            <summary className="cursor-pointer px-3 py-2 text-xs font-medium text-brand">
+              Risk impact: what this trade would do to the fund
+            </summary>
+            <div className="border-t border-line px-3 py-3">
+              {(() => {
+                const result = impacts.get(p.id)!;
+                return result.ok ? (
+                  <>
+                    <ImpactTable ticker={p.ticker.toUpperCase()} result={result} tickers={riskTickers} />
+                    <p className="mt-2 text-[11px] leading-relaxed text-faint">
+                      Priced at the last close, paid from or added to cash, nothing else rebalanced. Risk figures
+                      use one year of daily prices. More on the{" "}
+                      <Link href="/analytics?tab=whatif" className="text-brand hover:underline">
+                        Analytics
+                      </Link>{" "}
+                      page.
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-xs text-muted">{result.reason}</p>
+                );
+              })()}
+            </div>
+          </details>
         ) : null}
 
         <VotePanel

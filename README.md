@@ -109,6 +109,32 @@ Almost everything on the Overview page is derived, not entered:
   computed figure from the Admin page (e.g. a bad price, a data gap) without
   a code deploy. Leave them blank to use the computed value.
 
+## Analytics
+
+The Analytics page (`/analytics`) is computed entirely from the daily closes in
+`price_cache`; it adds no tables.
+
+- [`lib/analytics/math.ts`](lib/analytics/math.ts): the statistics (volatility,
+  regression, drawdown, value at risk, Sharpe with its standard error).
+- [`lib/analytics/engine.ts`](lib/analytics/engine.ts): portfolio risk from a
+  covariance matrix, and the before/after of a trade. Pure, so the what-if tool
+  runs it in the browser and the Proposals page runs it on the server.
+- [`lib/analytics/data.ts`](lib/analytics/data.ts): loads prices and assembles
+  every figure the page shows. Its header comment explains the two views of
+  the portfolio ("today's mix" for risk, "these shares" for returns).
+- [`lib/analytics/episodes.ts`](lib/analytics/episodes.ts): replays past
+  sell-offs against today's holdings. Old closes are fetched from Twelve Data
+  once (a few per page view) and kept in `price_cache`. Rows whose ticker
+  starts with `nodata_` are markers meaning "that ticker has no price for that
+  episode", so the API is not asked again.
+- [`content/analytics.ts`](content/analytics.ts): every hand-kept assumption:
+  benchmark, asset classes, bond durations, stand-ins for funds that did not
+  exist in an episode, hedge assumptions, and the IPS limits (blank until the
+  IPS sets them).
+
+Prices carry no dividends, so returns are price returns. Sharpe and Sortino add
+each holding's known yield back as a daily accrual.
+
 ## Prices
 
 Daily closes come from Twelve Data and are cached in the `price_cache` table, so
