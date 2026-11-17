@@ -42,7 +42,7 @@ export async function addPmAccount(
     revalidatePath("/admin");
     return {
       ok: true,
-      message: `Account created. Temporary password for ${email}: ${tempPassword} — share it with them; they can change it after signing in.`,
+      message: `Account created. Temporary password for ${email}: ${tempPassword}. Share it with them; they can change it after signing in.`,
     };
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Could not create the account." };
@@ -180,7 +180,7 @@ export async function addCashEvent(
   if (!Number.isFinite(amountInput) || amountInput === 0)
     return { error: "Enter a non-zero dollar amount." };
   if (kind !== "adjustment" && amountInput < 0)
-    return { error: "Enter a positive amount — the event type already sets the direction." };
+    return { error: "Enter a positive amount. The event type already sets the direction." };
   if (!occurredOn) return { error: "Date is required." };
 
   // Every kind except "adjustment" has a fixed direction, so the advisor just

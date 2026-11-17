@@ -23,8 +23,8 @@ const VOTE_META: Record<VoteChoice, { label: string; tone: string; activeTone: s
   },
   needs_review: {
     label: "Need to review",
-    tone: "border-line-strong text-muted hover:border-warn/40 hover:bg-warn-soft hover:text-warn",
-    activeTone: "border-warn/40 bg-warn-soft text-warn",
+    tone: "border-line-strong text-muted hover:border-warn/40 hover:bg-warn-soft hover:text-warn-ink",
+    activeTone: "border-warn/40 bg-warn-soft text-warn-ink",
   },
 };
 

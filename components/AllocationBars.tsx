@@ -23,7 +23,7 @@ const STATUS_META: Record<StrategyAllocation["status"], { tone: Tone; label: str
 // Tailwind can't interpolate arbitrary class strings, so the tone -> class
 // mapping has to be a lookup table of literal classes rather than a template.
 const FILL_CLASS: Record<Tone, string> = { pos: "bg-pos", warn: "bg-warn", neg: "bg-neg" };
-const TEXT_CLASS: Record<Tone, string> = { pos: "text-pos", warn: "text-warn", neg: "text-neg" };
+const TEXT_CLASS: Record<Tone, string> = { pos: "text-pos", warn: "text-warn-ink", neg: "text-neg" };
 const BADGE_CLASS: Record<Tone, string> = {
   pos: "border-pos/25 bg-pos-soft",
   warn: "border-warn/30 bg-warn-soft",
@@ -49,12 +49,12 @@ export function AllocationBars({
     <div className="flex flex-col gap-5 px-5 py-5">
       {/* legend - the color-status mapping and the tick are never explained
           by color alone elsewhere, so spell them out once, up top */}
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[11px] text-muted">
+      <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted">
         <LegendDot tone="pos" label="In range" />
         <LegendDot tone="warn" label="Below target" />
         <LegendDot tone="neg" label="Above target" />
-        <span className="flex items-center gap-1.5">
-          <span className="inline-block h-3 w-[3px] rounded-sm bg-ink/70" />
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface px-2.5 py-1">
+          <span className="inline-block h-3 w-[3px] rounded-sm bg-gold" />
           IPS target range
         </span>
       </div>
@@ -124,7 +124,7 @@ export function AllocationBars({
           </span>
         </div>
         <div className="relative mt-3 h-2.5 rounded-full bg-surface-2">
-          <div className="absolute top-0 h-full rounded-full bg-gold" style={{ width: `${toX(cashWeightPct)}%` }} />
+          <div className="absolute top-0 h-full rounded-full bg-sky" style={{ width: `${toX(cashWeightPct)}%` }} />
         </div>
         <p className="mt-1.5 text-[11px] text-faint">Held aside for opportunities. Not an IPS strategy.</p>
       </div>
@@ -143,7 +143,7 @@ export function AllocationBars({
 
 function LegendDot({ tone, label }: { tone: Tone; label: string }) {
   return (
-    <span className="flex items-center gap-1.5">
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface px-2.5 py-1">
       <span className={`inline-block h-2 w-2 rounded-full ${FILL_CLASS[tone]}`} />
       {label}
     </span>
@@ -153,7 +153,7 @@ function LegendDot({ tone, label }: { tone: Tone; label: string }) {
 function RangeTick({ x }: { x: number }) {
   return (
     <div
-      className="absolute -top-1 h-4 w-[3px] -translate-x-1/2 rounded-sm bg-ink/70 ring-2 ring-surface"
+      className="absolute -top-1 h-4 w-[3px] -translate-x-1/2 rounded-sm bg-gold ring-2 ring-surface"
       style={{ left: `${x}%` }}
     />
   );

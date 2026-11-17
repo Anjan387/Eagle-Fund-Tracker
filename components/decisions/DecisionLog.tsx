@@ -93,7 +93,7 @@ export function DecisionLog({
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Decision Log"
-        description="One folder for every buy or sell decision the fund makes: the thesis, the documents behind it, and a review of how it turned out."
+        description="Every buy or sell decision: the thesis, the documents behind it, and how it turned out."
         action={
           <div className="flex shrink-0 flex-wrap gap-2">
             <SubmitButton type="button" variant="ghost" onClick={exportCsv} disabled={decisions.length === 0}>

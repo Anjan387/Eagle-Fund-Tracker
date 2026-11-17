@@ -33,7 +33,7 @@ export default async function TickerPage({ params }: PageProps<"/research/[ticke
         <PageHeader title="Ticker not found" />
         <EmptyState
           title={`No data for "${ticker}"`}
-          hint="Nothing came back from the market-data provider or the cache for this symbol — it's likely not a real ticker. Try the search below instead of typing one in directly."
+          hint="Nothing came back from the market-data provider or the cache for this symbol, so it's likely not a real ticker. Try the search below instead of typing one in directly."
         />
         <Card className="p-5">
           <StockSearch autoFocus />
@@ -67,7 +67,7 @@ export default async function TickerPage({ params }: PageProps<"/research/[ticke
         description={
           isKnownTicker(ticker)
             ? undefined
-            : "Real ticker, but not one of the app's pre-configured names — market cap, P/E, and yield may show as \"—\" if the data plan doesn't return them."
+            : "Real ticker, but not one of the app's pre-configured names: market cap, P/E and yield may be unavailable."
         }
         action={
           <div className="w-full sm:w-80">
@@ -116,10 +116,10 @@ export default async function TickerPage({ params }: PageProps<"/research/[ticke
             <Stat label="52-wk low" value={money2(quote.yearLow)} />
             <Stat label="52-wk high" value={money2(quote.yearHigh)} />
             <Stat label="Market cap" value={compactMoney(quote.marketCap)} />
-            <Stat label="P/E ratio" value={quote.peRatio ? quote.peRatio.toFixed(1) : "—"} />
+            <Stat label="P/E ratio" value={quote.peRatio ? quote.peRatio.toFixed(1) : "–"} />
             <Stat
               label="Dividend yield"
-              value={quote.dividendYield ? `${(quote.dividendYield * 100).toFixed(2)}%` : "—"}
+              value={quote.dividendYield ? `${(quote.dividendYield * 100).toFixed(2)}%` : "–"}
             />
             <Stat label="As of" value={new Date(quote.asOf).toLocaleDateString("en-US")} />
           </dl>

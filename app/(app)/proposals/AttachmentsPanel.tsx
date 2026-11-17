@@ -115,7 +115,7 @@ function UploadForm({ proposalId, onDone }: { proposalId: string; onDone: () => 
         </button>
       </div>
       <FieldError>{state.error}</FieldError>
-      <p className="text-[11px] text-faint">Any file type — Excel, PDF, Word, etc. — up to 25MB.</p>
+      <p className="text-[11px] text-faint">Any file type (Excel, PDF, Word, etc.) up to 25MB.</p>
     </form>
   );
 }

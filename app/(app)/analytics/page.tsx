@@ -255,7 +255,7 @@ function RiskTab({ a }: { a: AnalyticsModel }) {
         />
         <div className="px-5 py-5">
           <div className="overflow-x-auto">
-            <table className="border-separate border-spacing-0.5 text-[11px] tnum">
+            <table className="plain border-separate border-spacing-0.5 text-[11px] tnum">
               <thead>
                 <tr>
                   <td />
@@ -383,7 +383,7 @@ function Episode({ e, fundValue }: { e: EpisodeResult; fundValue: number }) {
                   <td className={cn(td, r.retPct == null ? "text-faint" : tone(r.retPct))}>{r.retPct == null ? "…" : sp(r.retPct)}</td>
                   <td className={cn(td, "font-medium", r.usd == null ? "text-faint" : tone(r.usd))}>{r.usd == null ? "…" : signedMoney(r.usd)}</td>
                   <td className="px-3 py-2 text-xs text-muted">
-                    {r.source === "flat" ? <span className="font-medium text-warn">{r.basis}</span> : r.basis}
+                    {r.source === "flat" ? <span className="font-medium text-warn-ink">{r.basis}</span> : r.basis}
                   </td>
                 </tr>
               ))}
@@ -1196,11 +1196,12 @@ export default async function AnalyticsPage({
     <div className="flex flex-col gap-8">
       <PageHeader
         title="Analytics"
-        description="How much risk the fund is taking, where it comes from, what a sell-off would do to it, and whether the return has been worth it. Estimates from price history, not forecasts."
+        description="Risk, stress tests and performance, estimated from price history."
+        info="How much risk the fund is taking, where it comes from, what a sell-off would do to it, and whether the return has been worth it. Estimates from price history, not forecasts."
         action={windowPicker}
       />
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <StatTile label="Volatility (annual)" value={`${a.risk.volPct.toFixed(1)}%`} sub={`benchmark ${a.risk.benchVolPct.toFixed(1)}% · ${MARKET.label} ${a.risk.marketVolPct.toFixed(1)}%`} />
         <StatTile
           label={`Beta to ${MARKET.label}`}

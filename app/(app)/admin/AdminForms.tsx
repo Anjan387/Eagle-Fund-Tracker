@@ -85,8 +85,8 @@ export function ReturnsForm({
 }) {
   const [state, action, pending] = useActionState(saveReturnOverrides, initial);
   const basisLabel: Record<string, string> = {
-    "trailing-12mo": "computed — true trailing 12 months",
-    "since-rebuild": "computed — since the April 2026 rebuild (not a year of history yet)",
+    "trailing-12mo": "computed: true trailing 12 months",
+    "since-rebuild": "computed: since the April 2026 rebuild (not a year of history yet)",
     override: "advisor override",
   };
   return (
@@ -254,7 +254,7 @@ export function DividendForm({ tickers }: { tickers: string[] }) {
             ))}
           </select>
           <span className="text-[11px] text-faint">
-            Shares are computed from the dividend amount at that holding&apos;s current price —
+            Shares are computed from the dividend amount at that holding&apos;s current price,
             same as a real DRIP, fractional shares included.
           </span>
         </label>

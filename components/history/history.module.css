@@ -27,8 +27,7 @@
   background: color-mix(in srgb, var(--surface) 80%, transparent);
   border: 1px solid var(--line);
   box-shadow:
-    0 1px 2px rgba(15, 23, 42, 0.04),
-    0 14px 34px -18px rgba(15, 23, 42, 0.28);
+    var(--elev-1);
   -webkit-backdrop-filter: blur(12px);
   backdrop-filter: blur(12px);
 }
@@ -51,9 +50,9 @@
 
 /* ---- hero: navy in both themes, with slow "market data" lines ---- */
 .hero {
-  background: linear-gradient(120deg, #0b1626, #1f3a5f, #11253f, #0b1626);
+  background: linear-gradient(120deg, var(--hero-from), var(--hero-to), var(--hero-from), var(--hero-to));
   background-size: 300% 300%;
-  color: #eef2f8;
+  color: var(--on-hero);
   animation: hero-shift 30s ease-in-out infinite;
 }
 @keyframes hero-shift {
@@ -128,7 +127,7 @@
 
 /* ---- milestone dialog ---- */
 .dialog::backdrop {
-  background: rgba(8, 12, 20, 0.62);
+  background: var(--scrim);
   -webkit-backdrop-filter: blur(3px);
   backdrop-filter: blur(3px);
 }

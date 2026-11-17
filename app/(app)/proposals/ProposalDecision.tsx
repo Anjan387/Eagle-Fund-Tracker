@@ -16,7 +16,7 @@ export function ProposalDecision({ proposalId }: { proposalId: string }) {
           type="submit"
           name="decision"
           value="approved"
-          className="rounded-md bg-pos px-3 py-1.5 text-xs font-medium text-white hover:opacity-90"
+          className="rounded-md bg-pos px-3 py-1.5 text-xs font-medium text-surface transition-opacity duration-150 hover:opacity-90"
         >
           Approve
         </button>

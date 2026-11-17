@@ -27,13 +27,13 @@ export default async function LoginPage() {
 
         <div className="mt-4 rounded-md border border-line bg-surface-2 px-4 py-3 text-xs text-muted">
           <p>
-            Accounts are created by the faculty advisor each semester — there is no sign-up.
+            Accounts are created by the faculty advisor each semester; there is no sign-up.
             If you&apos;re a new PM and don&apos;t have a login yet, ask the advisor.
           </p>
         </div>
 
         <p className="mt-4 text-center text-[11px] text-faint">
-          Shadow ledger only. No brokerage connection — the advisor&apos;s Schwab statement
+          Shadow ledger only. No brokerage connection: the advisor&apos;s Schwab statement
           remains the fund&apos;s official record.
         </p>
       </div>

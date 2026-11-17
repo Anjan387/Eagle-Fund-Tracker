@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { requireUser } from "@/lib/auth";
 import { IPS_TEXT } from "@/content/ips";
-import { cn } from "@/components/ui";
+import { PageHeader, cn } from "@/components/ui";
 import { IpsNav, type IpsNavItem } from "@/components/ips/IpsNav";
 import styles from "@/components/history/history.module.css";
 
@@ -168,7 +168,7 @@ function Body({ blocks }: { blocks: Block[] }) {
       sub = b.title;
       out.push(
         <h3 key={i} className={cn("flex items-baseline gap-3", out.length > 0 && "mt-4")}>
-          <span className="font-mono text-xs font-semibold text-gold tnum">{b.num}</span>
+          <span className="font-mono text-xs font-semibold text-gold-ink tnum">{b.num}</span>
           <span className="text-base font-semibold tracking-tight text-ink">{b.title}</span>
         </h3>,
       );
@@ -190,7 +190,7 @@ function SectionCard({ s }: { s: Section }) {
     <section
       id={s.id}
       aria-labelledby={`${s.id}-title`}
-      className="scroll-mt-16 overflow-hidden rounded-2xl border border-line bg-surface shadow-[0_1px_2px_rgba(15,23,42,0.04),0_18px_40px_-26px_rgba(15,23,42,0.35)] lg:scroll-mt-8"
+      className="scroll-mt-16 overflow-hidden rounded-2xl border border-line bg-surface shadow-card lg:scroll-mt-8"
     >
       <header className="relative flex items-center gap-5 border-b border-line bg-gradient-to-r from-brand/[0.08] via-brand/[0.03] to-transparent px-5 py-5 sm:px-8">
         <span aria-hidden className="absolute inset-y-0 left-0 w-1 bg-gold" />
@@ -198,8 +198,8 @@ function SectionCard({ s }: { s: Section }) {
           {s.num.padStart(2, "0")}
         </span>
         <div className="min-w-0">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-gold">Section {s.num}</p>
-          <h2 id={`${s.id}-title`} className="mt-0.5 text-lg font-semibold tracking-tight text-ink sm:text-xl">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-gold-ink">Section {s.num}</p>
+          <h2 id={`${s.id}-title`} className="mt-0.5 text-lg font-semibold tracking-tight text-heading sm:text-xl">
             {s.title}
           </h2>
         </div>
@@ -216,19 +216,19 @@ function Hero({ title }: { title: string }) {
     <section
       className={cn(
         styles.hero,
-        "relative -mx-4 -mt-6 overflow-hidden px-6 py-14 sm:-mx-6 sm:px-10 sm:py-20 lg:-mx-10 lg:-mt-10 lg:rounded-b-2xl lg:px-16",
+        "relative overflow-hidden rounded-lg px-6 py-14 sm:px-10 sm:py-20 lg:px-16",
       )}
     >
       {/* faint price lines; decoration only */}
       <svg aria-hidden viewBox="0 0 1200 400" preserveAspectRatio="xMidYMid slice" className="pointer-events-none absolute inset-0 h-full w-full">
         {[80, 160, 240, 320].map((y) => (
-          <line key={y} x1="0" x2="1200" y1={y} y2={y} stroke="#ffffff" strokeOpacity="0.05" />
+          <line key={y} x1="0" x2="1200" y1={y} y2={y} stroke="var(--on-hero)" strokeOpacity="0.05" />
         ))}
         <polyline
           className={styles.heroLine}
           points="0,300 120,285 220,305 330,260 440,275 550,225 660,240 770,190 880,205 990,150 1100,165 1200,120"
           fill="none"
-          stroke="#d8b25e"
+          stroke="var(--gold)"
           strokeOpacity="0.35"
           strokeWidth="2"
           strokeLinecap="round"
@@ -238,7 +238,7 @@ function Hero({ title }: { title: string }) {
           className={styles.heroLine}
           points="0,330 120,322 220,334 330,302 440,312 550,278 660,288 770,252 880,262 990,226 1100,236 1200,205"
           fill="none"
-          stroke="#ffffff"
+          stroke="var(--on-hero)"
           strokeOpacity="0.14"
           strokeWidth="2"
           strokeLinecap="round"
@@ -246,12 +246,12 @@ function Hero({ title }: { title: string }) {
         />
       </svg>
       <div className="relative">
-        <p className="flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#d8b25e]">
-          <span className="h-px w-8 bg-[#d8b25e]" />
+        <p className="flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-on-hero-accent">
+          <span className="h-px w-8 bg-on-hero-accent" />
           Juniata Eagle Fund
         </p>
-        <h1 className="mt-5 max-w-3xl text-4xl font-semibold tracking-tight sm:text-5xl lg:text-6xl">{title}</h1>
-        <div className="mt-6 h-px w-24 bg-gradient-to-r from-[#d8b25e] to-transparent" />
+        <h2 className="mt-5 max-w-3xl text-4xl font-semibold tracking-tight sm:text-5xl lg:text-6xl">{title}</h2>
+        <div className="mt-6 h-px w-24 bg-gradient-to-r from-gold to-transparent" />
       </div>
     </section>
   );
@@ -266,6 +266,9 @@ export default async function IpsPage() {
 
   return (
     <div className={styles.page}>
+      <div className="mb-6">
+        <PageHeader title="Investment Policy" />
+      </div>
       <Hero title={title} />
       <div className="mt-6 lg:mt-12 lg:grid lg:grid-cols-[13.5rem_minmax(0,1fr)] lg:gap-12">
         <IpsNav items={nav} />

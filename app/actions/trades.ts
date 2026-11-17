@@ -33,7 +33,7 @@ export async function recordTrade(
   if (!tradeDate) return { error: "Trade date is required." };
   if (!(await getStrategyById(strategyId))) return { error: "Choose a strategy." };
   if (!(await getQuote(ticker))) {
-    return { error: `"${ticker}" isn't a recognized ticker — pick one from the search suggestions.` };
+    return { error: `"${ticker}" isn't a recognized ticker. Pick one from the search suggestions.` };
   }
 
   await addTrade({

@@ -88,7 +88,7 @@ export function IpsNav({ items }: { items: IpsNavItem[] }) {
                     <span
                       className={cn(
                         "w-5 shrink-0 text-right font-mono text-[11px] tnum",
-                        current ? "text-gold" : "text-faint",
+                        current ? "text-gold-ink" : "text-faint",
                       )}
                     >
                       {it.num ?? "·"}
@@ -104,7 +104,7 @@ export function IpsNav({ items }: { items: IpsNavItem[] }) {
 
       <nav
         aria-label="On this page"
-        className="sticky top-0 z-20 -mx-4 mb-6 border-b border-line bg-canvas/90 backdrop-blur sm:-mx-6 lg:hidden"
+        className="sticky top-14 z-20 -mx-4 mb-6 border-b border-line bg-canvas/90 backdrop-blur sm:-mx-6 md:top-0 lg:hidden"
       >
         <div ref={strip} className="flex gap-1.5 overflow-x-auto px-4 py-2 sm:px-6">
           {items.map((it) => {

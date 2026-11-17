@@ -135,7 +135,7 @@ export function Timeline({ milestones }: { milestones: Milestone[] }) {
                 />
               ) : null}
               <span className="flex flex-1 flex-col p-5">
-                <span className="font-mono text-xs font-medium uppercase tracking-wider text-gold">
+                <span className="font-mono text-xs font-medium uppercase tracking-wider text-gold-ink">
                   <Fill text={m.year} />
                 </span>
                 <span className="mt-2 text-base font-semibold tracking-tight text-ink">
@@ -160,7 +160,7 @@ export function Timeline({ milestones }: { milestones: Milestone[] }) {
         onClick={onBackdrop}
         className={cn(
           styles.dialog,
-          "m-auto max-h-[85vh] w-[calc(100%-2rem)] max-w-2xl overflow-y-auto rounded-xl border border-line bg-surface p-0 text-ink shadow-2xl",
+          "m-auto max-h-[85vh] w-[calc(100%-2rem)] max-w-2xl overflow-y-auto rounded-xl border border-line bg-surface p-0 text-ink shadow-pop",
         )}
       >
         {open ? (
@@ -171,7 +171,7 @@ export function Timeline({ milestones }: { milestones: Milestone[] }) {
             <div className="p-6 sm:p-8">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="font-mono text-xs font-medium uppercase tracking-wider text-gold">
+                  <p className="font-mono text-xs font-medium uppercase tracking-wider text-gold-ink">
                     <Fill text={open.year} />
                   </p>
                   <h3 id="milestone-title" className="mt-2 text-xl font-semibold tracking-tight">

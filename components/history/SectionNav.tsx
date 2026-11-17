@@ -102,7 +102,7 @@ export function SectionNav({ sections }: { sections: NavSection[] }) {
 
       <nav
         aria-label="On this page"
-        className="sticky top-0 z-20 -mx-4 border-b border-line bg-canvas/85 backdrop-blur sm:-mx-6 lg:hidden"
+        className="sticky top-14 z-20 -mx-4 border-b border-line bg-canvas/85 backdrop-blur sm:-mx-6 md:top-0 lg:hidden"
       >
         <div ref={strip} className="flex gap-1.5 overflow-x-auto px-4 py-2 sm:px-6">
           {sections.map((s) => {

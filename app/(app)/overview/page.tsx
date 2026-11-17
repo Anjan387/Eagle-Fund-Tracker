@@ -11,6 +11,13 @@ const RETURN_BASIS_LABEL: Record<string, string> = {
   override: "advisor override",
 };
 
+/** Green with an up arrow for a gain, red with a down arrow for a loss. */
+function returnTone(pct: number): { tone: "pos" | "neg" | "neutral"; trend?: "up" | "down" } {
+  if (pct > 0) return { tone: "pos", trend: "up" };
+  if (pct < 0) return { tone: "neg", trend: "down" };
+  return { tone: "neutral" };
+}
+
 export default async function OverviewPage() {
   const o = await getFundOverview();
 
@@ -18,11 +25,18 @@ export default async function OverviewPage() {
     <div className="flex flex-col gap-8">
       <PageHeader
         title="Overview"
-        description="Live valuation of the shadow ledger against the fund's 80/20 ACWI/AGG benchmark. Holdings, cash, trailing returns, and the benchmark all recalculate automatically — see Admin for the basis of each and to set a correction if one is ever needed."
+        description="Live valuation of the fund against its 80/20 ACWI/AGG benchmark."
+        info={
+          <>
+            Holdings, cash, trailing returns and the benchmark all recalculate automatically from the trade
+            ledger and live prices. The Admin page shows how each figure is computed and lets the advisor set a
+            correction if one is ever needed.
+          </>
+        }
         action={<LiveStatus />}
       />
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatTile
           label="Fund value"
           value={money(o.fundValue)}
@@ -31,18 +45,19 @@ export default async function OverviewPage() {
         <StatTile
           label="Trailing 12-mo return"
           value={signedPct(o.fundTrailingReturnPct)}
-          tone={o.fundTrailingReturnPct >= 0 ? "pos" : "neg"}
+          {...returnTone(o.fundTrailingReturnPct)}
           sub={RETURN_BASIS_LABEL[o.fundReturnBasis]}
         />
         <StatTile
           label="Benchmark (80/20)"
           value={signedPct(o.benchmarkTrailingReturnPct)}
+          {...returnTone(o.benchmarkTrailingReturnPct)}
           sub={`ACWI / AGG · ${RETURN_BASIS_LABEL[o.benchmarkReturnBasis]}`}
         />
         <StatTile
           label="Outperformance"
           value={signedPct(o.outperformancePct)}
-          tone={o.outperformancePct >= 0 ? "pos" : "neg"}
+          {...returnTone(o.outperformancePct)}
           sub="vs benchmark"
         />
       </div>
@@ -50,7 +65,7 @@ export default async function OverviewPage() {
       <Card>
         <CardHeader
           title="Assets under management"
-          description="2020–2025 year-end totals from the annual deck; the current year is a live estimate (holdings + cash)."
+          description="Year-end totals from the annual deck. The current year is a live estimate (holdings + cash)."
         />
         <div className="px-3 py-4">
           <AumChart data={o.aum} />

@@ -91,7 +91,7 @@ export function DecisionDetail({
             <StatusBadge status={decision.status} />
           </div>
           <p className="mt-1 text-sm text-muted">
-            {decision.companyName ?? "—"} · {longDate(decision.decisionDate)} · {semesterOf(decision.decisionDate)}
+            {decision.companyName ?? "–"} · {longDate(decision.decisionDate)} · {semesterOf(decision.decisionDate)}
           </p>
           <p className="mt-2 max-w-3xl text-sm text-ink">{decision.thesisSummary}</p>
         </div>

@@ -314,7 +314,7 @@ export function ThesisFields({ form, set }: { form: DecisionForm; set: SetForm }
         <div className="flex flex-col gap-1.5">
           <span className={labelClass}>Margin of safety</span>
           <p className="rounded-md border border-dashed border-line-strong px-3 py-2 text-sm text-ink tnum">
-            {margin == null || !Number.isFinite(margin) ? "—" : `${margin.toFixed(1)}%`}
+            {margin == null || !Number.isFinite(margin) ? "–" : `${margin.toFixed(1)}%`}
           </p>
           <span className="text-[11px] text-faint">Worked out from intrinsic value and price at decision.</span>
         </div>

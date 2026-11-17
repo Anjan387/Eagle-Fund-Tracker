@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { IconMoon, IconSun } from "@/components/icons";
 
 type Theme = "light" | "dark";
 
+/** Small icon button that switches light/dark and remembers the choice. */
 export function ThemeToggle() {
   const [theme, setTheme] = useState<Theme | null>(null);
 
@@ -27,14 +29,16 @@ export function ThemeToggle() {
     }
   }
 
+  const label = theme === "dark" ? "Switch to light mode" : "Switch to dark mode";
   return (
     <button
       type="button"
       onClick={toggle}
-      className="inline-flex items-center gap-2 rounded-md border border-line-strong px-2.5 py-1.5 text-xs text-muted hover:bg-surface-2"
-      aria-label="Toggle color theme"
+      title={label}
+      aria-label={label}
+      className="grid h-8 w-8 place-items-center rounded-md text-on-sidebar/80 transition-colors duration-150 hover:bg-sidebar-hover hover:text-on-sidebar"
     >
-      {theme === "dark" ? "☾ Dark" : "☀ Light"}
+      {theme === "dark" ? <IconSun size={17} /> : <IconMoon size={17} />}
     </button>
   );
 }

@@ -28,7 +28,7 @@ export function NewProposalForm({ strategies }: { strategies: Strategy[] }) {
           value={ticker}
           onValueChange={setTicker}
           required
-          placeholder="Company name or ticker — Intuit, INTU…"
+          placeholder="Company name or ticker, e.g. Intuit, INTU…"
         />
       </label>
       <label className="flex flex-col gap-1.5">
@@ -73,7 +73,7 @@ export function NewProposalForm({ strategies }: { strategies: Strategy[] }) {
           className="text-sm text-muted file:mr-2 file:rounded file:border-0 file:bg-brand file:px-2.5 file:py-1.5 file:text-xs file:font-medium file:text-brand-contrast hover:file:bg-brand-hover"
         />
         <span className="text-[11px] text-faint">
-          Any file type — Excel, PDF, Word, etc. — up to 25MB. You can also attach more (or
+          Any file type (Excel, PDF, Word, etc.) up to 25MB. You can also attach more (or
           others can) once it's submitted.
         </span>
       </label>

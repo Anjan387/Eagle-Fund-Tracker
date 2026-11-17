@@ -25,7 +25,8 @@ export default async function TransactionsPage() {
     <div className="flex flex-col gap-8">
       <PageHeader
         title="Transactions"
-        description="Append-only trade log. Entries are never edited or deleted — if something was recorded wrong, the advisor corrects it with a new offsetting entry so the audit trail stays intact."
+        description="Append-only trade log."
+        info="Entries are never edited or deleted. If something was recorded wrong, the advisor corrects it with a new offsetting entry so the audit trail stays intact."
       />
 
       {user.role === "advisor" ? (
@@ -55,7 +56,7 @@ export default async function TransactionsPage() {
           price: t.price,
           strategyId: t.strategyId,
           strategy: stratName.get(t.strategyId) ?? "",
-          enteredBy: userName.get(t.enteredBy) ?? "—",
+          enteredBy: userName.get(t.enteredBy) ?? "–",
           fromProposal: t.source === "approved_proposal",
           notes: t.notes ?? null,
         }))}

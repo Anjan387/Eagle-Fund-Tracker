@@ -10,7 +10,7 @@ import { cn } from "@/components/ui";
 export const IMPACT_SHOCK = 30;
 
 const STATUS_LABEL = { under: "below range", "in-range": "in range", over: "above range" } as const;
-const STATUS_TONE = { under: "text-warn", "in-range": "text-pos", over: "text-neg" } as const;
+const STATUS_TONE = { under: "text-warn-ink", "in-range": "text-pos", over: "text-neg" } as const;
 
 function Row({
   label,

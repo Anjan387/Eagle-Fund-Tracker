@@ -14,12 +14,13 @@ export default async function HoldingsPage() {
     <div className="flex flex-col gap-8">
       <PageHeader
         title="Holdings"
-        description="Open positions in the shadow ledger, grouped by strategy and priced from Twelve Data — live quotes while the market is open, the latest daily close otherwise."
+        description="Open positions, grouped by strategy, at live prices."
+        info="Priced from Twelve Data: live quotes while the market is open, the latest daily close otherwise."
         action={<LiveStatus />}
       />
 
       <Card className="p-5">
-        <StockSearch placeholder="Look up any company or ticker — not just fund holdings" />
+        <StockSearch placeholder="Look up any company or ticker, not just fund holdings" />
       </Card>
 
       {strategies.map((strategy) => {

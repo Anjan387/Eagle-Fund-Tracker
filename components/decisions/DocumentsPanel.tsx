@@ -17,9 +17,9 @@ import { fileProblem, uploadDocument } from "./upload";
 const KIND_TONE = {
   pdf: "bg-neg-soft text-neg border-neg/25",
   sheet: "bg-pos-soft text-pos border-pos/25",
-  slides: "bg-warn-soft text-warn border-warn/30",
+  slides: "bg-warn-soft text-warn-ink border-warn/30",
   doc: "bg-brand/10 text-brand border-brand/20",
-  image: "bg-gold-soft text-gold border-gold/30",
+  image: "bg-gold-soft text-gold-ink border-gold/30",
 } as const;
 
 /** The small coloured label that stands in for a file-type icon. */
@@ -226,7 +226,7 @@ export function DocumentsPanel({
         onClick={(e) => {
           if (e.target === e.currentTarget) e.currentTarget.close();
         }}
-        className="m-auto h-[88vh] w-[calc(100%-2rem)] max-w-5xl overflow-hidden rounded-xl border border-line bg-surface p-0 text-ink shadow-2xl backdrop:bg-black/60"
+        className="m-auto h-[88vh] w-[calc(100%-2rem)] max-w-5xl overflow-hidden rounded-xl border border-line bg-surface p-0 text-ink shadow-pop backdrop:bg-[var(--scrim)]"
       >
         {preview ? (
           <div className="flex h-full flex-col">

@@ -125,7 +125,7 @@ export function TradeLog({ rows, strategies }: { rows: TradeRow[]; strategies: {
                 type="search"
                 value={query}
                 onChange={(e) => reset(setQuery)(e.target.value)}
-                placeholder="Search by ticker, company, date, month or year — e.g. apple, april 2026, 2025-09, sell"
+                placeholder="Search by ticker, company, date, month or year (e.g. apple, april 2026, 2025-09, sell)"
                 className={inputClass}
               />
             </label>
@@ -196,7 +196,7 @@ export function TradeLog({ rows, strategies }: { rows: TradeRow[]; strategies: {
               <EmptyState title="No trades match" hint="Try fewer words, a ticker, or a month and year like “april 2026”." />
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="max-h-[70vh] overflow-auto">
               <table className="w-full min-w-[820px] text-sm">
                 <thead>
                   <tr className="border-b border-line text-left text-[11px] uppercase tracking-wide text-faint">

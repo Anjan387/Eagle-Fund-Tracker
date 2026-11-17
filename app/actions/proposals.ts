@@ -47,7 +47,7 @@ export async function submitProposal(
     return { error: `That attachment is larger than the ${MAX_ATTACHMENT_BYTES / (1024 * 1024)}MB limit.` };
   }
   if (!(await getQuote(ticker))) {
-    return { error: `"${ticker}" isn't a recognized ticker — pick one from the search suggestions.` };
+    return { error: `"${ticker}" isn't a recognized ticker. Pick one from the search suggestions.` };
   }
 
   const proposal = await createProposal({ ticker, action, shares, strategyId, rationale, proposedBy: user.id });

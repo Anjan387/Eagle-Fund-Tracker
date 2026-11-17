@@ -112,7 +112,7 @@ export function StockSearch({
             onKeyDown={onKeyDown}
             onFocus={() => results.length > 0 && setOpen(true)}
             autoFocus={autoFocus}
-            placeholder={placeholder ?? "Search by company name or ticker — Apple, AAPL, VOO…"}
+            placeholder={placeholder ?? "Search by company name or ticker, e.g. Apple, AAPL, VOO…"}
             className={inputClass}
             role="combobox"
             aria-expanded={open}
@@ -124,7 +124,7 @@ export function StockSearch({
             <ul
               id="stock-search-listbox"
               role="listbox"
-              className="absolute z-20 mt-1 max-h-72 w-full overflow-auto rounded-md border border-line-strong bg-surface shadow-lg"
+              className="absolute z-20 mt-1 max-h-72 w-full overflow-auto rounded-md border border-line-strong bg-surface shadow-pop"
             >
               {loading && results.length === 0 ? (
                 <li className="px-3 py-2 text-xs text-faint">Searching…</li>

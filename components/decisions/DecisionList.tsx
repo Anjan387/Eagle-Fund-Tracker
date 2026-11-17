@@ -105,7 +105,7 @@ export function DecisionList({
                 onClick={() => chooseView(v)}
                 className={cn(
                   "rounded px-3 py-1.5 text-xs transition-colors",
-                  view === v ? "bg-surface font-medium text-brand shadow-sm" : "text-muted hover:text-ink",
+                  view === v ? "bg-surface font-medium text-brand shadow-card" : "text-muted hover:text-ink",
                 )}
               >
                 {v === "grid" ? "Folders" : "Table"}
@@ -194,7 +194,7 @@ export function DecisionList({
               >
                 <span
                   className={cn(
-                    "flex h-full flex-col rounded-lg rounded-tl-none border border-l-4 border-line bg-surface p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-shadow group-hover:shadow-md",
+                    "flex h-full flex-col rounded-lg rounded-tl-none border border-l-4 border-line bg-surface p-4 shadow-card transition-shadow duration-150 group-hover:shadow-pop",
                     d.action === "buy" ? "border-l-pos" : "border-l-neg",
                   )}
                 >
@@ -203,7 +203,7 @@ export function DecisionList({
                     <ActionBadge action={d.action} />
                     <StatusBadge status={d.status} />
                   </span>
-                  <span className="mt-1 block truncate text-sm text-muted">{d.companyName ?? "—"}</span>
+                  <span className="mt-1 block truncate text-sm text-muted">{d.companyName ?? "–"}</span>
                   <span className="mt-3 line-clamp-2 block text-sm text-ink">{d.thesisSummary}</span>
                   <span className="mt-auto flex flex-wrap items-center justify-between gap-x-3 gap-y-1 pt-4 text-[11px] text-faint">
                     <span>
@@ -220,7 +220,7 @@ export function DecisionList({
         </ul>
       ) : (
         // w-0 + min-w-full: a wide table scrolls inside the page instead of stretching it
-        <div className="w-0 min-w-full overflow-x-auto rounded-lg border border-line bg-surface">
+        <div className="max-h-[70vh] w-0 min-w-full overflow-auto rounded-lg border border-line bg-surface">
           <table className="w-full min-w-[46rem] text-left text-sm">
             <thead className="border-b border-line text-[11px] uppercase tracking-wide text-faint">
               <tr>
@@ -246,7 +246,7 @@ export function DecisionList({
                       className="text-left hover:underline"
                     >
                       <span className="font-mono font-semibold text-ink">{d.ticker}</span>
-                      <span className="block max-w-[14rem] truncate text-xs text-muted">{d.companyName ?? "—"}</span>
+                      <span className="block max-w-[14rem] truncate text-xs text-muted">{d.companyName ?? "–"}</span>
                     </button>
                   </td>
                   <td className="px-4 py-3">

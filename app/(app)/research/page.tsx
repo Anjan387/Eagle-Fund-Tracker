@@ -16,10 +16,11 @@ export default async function ResearchPage() {
     <div className="flex flex-col gap-8">
       <PageHeader
         title="Research desk"
-        description="Look up any stock or ETF — not just fund holdings. Nothing here implies a position; it's a scratchpad for evaluating ideas before they become proposals."
+        description="Look up any stock or ETF, not just fund holdings."
+        info="Nothing here implies a position. It's a scratchpad for evaluating ideas before they become proposals."
       />
 
-      <div className="rounded-md border border-gold/30 bg-gold-soft px-4 py-2.5 text-xs text-gold">
+      <div className="rounded-md border border-gold/30 bg-gold-soft px-4 py-2.5 text-xs text-gold-ink">
         Research only. Nothing on this page is an Eagle Fund holding. Prices are the latest
         daily close, not intraday.
       </div>

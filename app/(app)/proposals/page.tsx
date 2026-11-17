@@ -86,7 +86,7 @@ export default async function ProposalsPage() {
               {p.action.toUpperCase()} {p.shares.toLocaleString()} {p.ticker}
             </p>
             <p className="text-[11px] text-faint">
-              {stratName.get(p.strategyId)} · by {userName.get(p.proposedBy) ?? "—"} ·{" "}
+              {stratName.get(p.strategyId)} · by {userName.get(p.proposedBy) ?? "–"} ·{" "}
               {relativeTime(p.createdAt)}
             </p>
           </div>
@@ -107,7 +107,7 @@ export default async function ProposalsPage() {
             <span className="font-medium text-ink">
               {p.status === "approved" ? "Approved" : "Rejected"}
             </span>{" "}
-            by {userName.get(p.decidedBy)} on {p.decidedAt ? longDate(p.decidedAt) : "—"}
+            by {userName.get(p.decidedBy)} on {p.decidedAt ? longDate(p.decidedAt) : "–"}
             {p.decisionNote ? <p className="mt-1 whitespace-pre-wrap">{p.decisionNote}</p> : null}
           </div>
         ) : null}
@@ -166,9 +166,12 @@ export default async function ProposalsPage() {
       <PageHeader
         title="Proposals"
         description={
+          user.role === "advisor" ? "Review the queue and decide." : "Suggest a buy or sell, and vote on everyone else's."
+        }
+        info={
           user.role === "advisor"
-            ? "Review the queue — PM votes below each proposal are a read on the room, not a binding tally. A proposal is intent, not execution; approving it does not create a trade."
-            : "Suggest a buy or sell for the fund, and vote on everyone else's. The advisor weighs the votes but makes the final call and records any resulting trade separately."
+            ? "PM votes below each proposal are a read on the room, not a binding tally. A proposal is intent, not execution: approving it does not create a trade."
+            : "The advisor weighs the votes but makes the final call, and records any resulting trade separately."
         }
       />
 

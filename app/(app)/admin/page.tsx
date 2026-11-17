@@ -42,7 +42,8 @@ export default async function AdminPage() {
     <div className="flex flex-col gap-8">
       <PageHeader
         title="Admin"
-        description="Faculty only. Manage portfolio-manager accounts each semester, log cash events, and review the automatically computed fund figures."
+        description="Faculty only: accounts, cash events and the computed fund figures."
+        info="Manage portfolio-manager accounts each semester, log cash events as they happen, and review how each automatically computed figure is derived."
       />
 
       <Card>
@@ -51,7 +52,7 @@ export default async function AdminPage() {
       </Card>
 
       <Card className="overflow-hidden">
-        <CardHeader title={`Team (${team.length})`} description="Edit a name, email or role, or deactivate an account when a PM finishes the course — their proposals and votes are kept." />
+        <CardHeader title={`Team (${team.length})`} description="Edit a name, email or role, or deactivate an account when a PM finishes the course. Their proposals and votes are kept." />
         <div className="overflow-x-auto">
           <table className="w-full min-w-[560px] text-sm">
             <thead>
@@ -104,7 +105,7 @@ export default async function AdminPage() {
       <Card className="overflow-hidden">
         <CardHeader
           title="Cash"
-          description={`Derived from the ledger below, not typed in — currently ${money(overview.cashBalance)}. Buys and sells post their own entries automatically; log deposits, dividends, and fees here as they happen.`}
+          description={`Derived from the ledger below, not typed in: currently ${money(overview.cashBalance)}. Buys and sells post their own entries automatically; log deposits, dividends, and fees here as they happen.`}
         />
         <CashEventForm />
         <div className="border-t border-line">
@@ -115,7 +116,7 @@ export default async function AdminPage() {
           </div>
           <DividendForm tickers={holdingTickers} />
         </div>
-        <div className="overflow-x-auto border-t border-line">
+        <div className="max-h-[70vh] overflow-auto border-t border-line">
           <table className="w-full min-w-[560px] text-sm">
             <thead>
               <tr className="border-b border-line text-left text-[11px] uppercase tracking-wide text-faint">
@@ -138,8 +139,8 @@ export default async function AdminPage() {
                   <tr key={c.id} className="border-b border-line last:border-0">
                     <td className="px-4 py-3 tnum text-muted">{longDate(c.occurredOn)}</td>
                     <td className="px-4 py-3 text-ink">{CASH_KIND_LABEL[c.kind] ?? c.kind}</td>
-                    <td className="px-4 py-3 tnum text-muted">{c.ticker ?? "—"}</td>
-                    <td className="px-4 py-3 text-muted">{c.memo ?? "—"}</td>
+                    <td className="px-4 py-3 tnum text-muted">{c.ticker ?? "–"}</td>
+                    <td className="px-4 py-3 text-muted">{c.memo ?? "–"}</td>
                     <td className={`px-4 py-3 text-right tnum font-medium ${c.amount >= 0 ? "text-pos" : "text-neg"}`}>
                       {c.amount >= 0 ? "+" : ""}
                       {money2(c.amount)}
@@ -151,7 +152,7 @@ export default async function AdminPage() {
           </table>
         </div>
         <p className="border-t border-line px-5 py-3 text-[11px] text-faint">
-          Append-only, like Transactions — fix a mistake with an offsetting Adjustment entry.
+          Append-only, like Transactions: fix a mistake with an offsetting Adjustment entry.
         </p>
       </Card>
 
@@ -202,7 +203,7 @@ export default async function AdminPage() {
           <p className="text-xs text-muted">
             {newestPrice
               ? `Most recent cached close: ${longDate(newestPrice)} (${relativeTime(newestPrice)})`
-              : "No prices cached yet — run this a few times, or hit /api/refresh-prices."}
+              : "No prices cached yet. Run this a few times, or hit /api/refresh-prices."}
           </p>
         </div>
       </Card>

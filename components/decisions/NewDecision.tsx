@@ -147,8 +147,8 @@ export function NewDecision({
           <dl className="grid gap-x-6 gap-y-4 text-sm sm:grid-cols-2">
             {(
               [
-                ["Decision", `${form.action === "buy" ? "Buy" : "Sell"} ${form.ticker.trim().toUpperCase() || "—"}`],
-                ["Decision date", form.decisionDate ? longDate(form.decisionDate) : "—"],
+                ["Decision", `${form.action === "buy" ? "Buy" : "Sell"} ${form.ticker.trim().toUpperCase() || "–"}`],
+                ["Decision date", form.decisionDate ? longDate(form.decisionDate) : "–"],
                 ["Status", STATUS_LABEL[form.status]],
                 ["Strategy sleeve", sleeve ?? "Not set"],
                 ["Shares", form.shares || "Not set"],
@@ -164,7 +164,7 @@ export function NewDecision({
             ))}
             <div className="sm:col-span-2">
               <dt className="text-[11px] font-medium uppercase tracking-wide text-faint">Thesis summary</dt>
-              <dd className="mt-1 text-ink">{form.thesisSummary || "—"}</dd>
+              <dd className="mt-1 text-ink">{form.thesisSummary || "–"}</dd>
             </div>
           </dl>
         ) : null}

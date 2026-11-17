@@ -13,7 +13,7 @@ import {
 } from "recharts";
 
 // The fund against its benchmark over time. One y-axis, two series: the fund
-// is the solid brand line, the benchmark the dashed gold one, so the pair is
+// is the solid Juniata Blue line, the benchmark the dashed light-blue one, so the pair is
 // never told apart by color alone.
 
 type Unit = "pct" | "index";
@@ -61,11 +61,11 @@ export function FundVsBenchChart({
     <div>
       <div className="mb-2 flex flex-wrap items-center gap-x-5 gap-y-1 px-2 text-[11px] text-muted">
         <span className="flex items-center gap-1.5">
-          <span className="inline-block h-0.5 w-5 rounded bg-brand" />
+          <span className="inline-block h-0.5 w-5 rounded bg-[var(--chart-1)]" />
           {fundLabel}
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="inline-block h-0 w-5 border-t-2 border-dashed border-gold" />
+          <span className="inline-block h-0 w-5 border-t-2 border-dashed border-[var(--chart-bench)]" />
           {benchLabel}
         </span>
       </div>
@@ -109,7 +109,7 @@ export function FundVsBenchChart({
                 type="linear"
                 dataKey="fund"
                 stroke="none"
-                fill="var(--brand)"
+                fill="var(--chart-1)"
                 fillOpacity={0.12}
                 isAnimationActive={false}
                 tooltipType="none"
@@ -120,13 +120,13 @@ export function FundVsBenchChart({
             <Line
               type="linear"
               dataKey="bench"
-              stroke="var(--gold)"
+              stroke="var(--chart-bench)"
               strokeWidth={2}
               strokeDasharray="5 4"
               dot={false}
               isAnimationActive={false}
             />
-            <Line type="linear" dataKey="fund" stroke="var(--brand)" strokeWidth={2} dot={false} isAnimationActive={false} />
+            <Line type="linear" dataKey="fund" stroke="var(--chart-1)" strokeWidth={2} dot={false} isAnimationActive={false} />
           </ComposedChart>
         </ResponsiveContainer>
       </div>

@@ -131,7 +131,7 @@ export function TickerAutocomplete({
         <ul
           id={`${name}-listbox`}
           role="listbox"
-          className="absolute z-20 mt-1 max-h-64 w-full overflow-auto rounded-md border border-line-strong bg-surface shadow-lg"
+          className="absolute z-20 mt-1 max-h-64 w-full overflow-auto rounded-md border border-line-strong bg-surface shadow-pop"
         >
           {loading && results.length === 0 ? (
             <li className="px-3 py-2 text-xs text-faint">Searching…</li>

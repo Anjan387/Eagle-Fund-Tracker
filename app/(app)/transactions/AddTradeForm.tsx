@@ -69,7 +69,7 @@ export function AddTradeForm({
           value={ticker}
           onValueChange={setTicker}
           required
-          placeholder="Company name or ticker — Apple, AAPL…"
+          placeholder="Company name or ticker, e.g. Apple, AAPL…"
         />
       </label>
 
