@@ -14,11 +14,12 @@ export interface User {
   createdAt: string; // ISO date
 }
 
+// The four strategies named in the Investment Policy (Section 4).
 export type StrategyName =
   | "Buy & Hold Asset Class"
-  | "Buy & Hold Value"
-  | "Momentum"
-  | "Defensive";
+  | "Buy Hold & Value Play"
+  | "Asset Momentum"
+  | "Hedge";
 
 export interface Strategy {
   id: string;
