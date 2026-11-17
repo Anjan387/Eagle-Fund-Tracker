@@ -140,15 +140,6 @@
   to { opacity: 1; transform: none; }
 }
 
-/* ---- eras ---- */
-.eraPanel {
-  animation: era-in 0.45s cubic-bezier(0.2, 0.7, 0.2, 1) both;
-}
-@keyframes era-in {
-  from { opacity: 0; transform: translateX(18px); }
-  to { opacity: 1; transform: none; }
-}
-
 /* ---- alumni flip cards ---- */
 .flip {
   perspective: 1000px;
@@ -191,7 +182,6 @@
   .heroLine,
   .heroDot,
   .cue,
-  .eraPanel,
   .dialog[open] {
     animation: none;
   }

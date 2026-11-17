@@ -61,14 +61,6 @@ export interface Milestone {
   image?: HistoryImage | null;
 }
 
-export interface Era {
-  id: string;
-  label: string;
-  years: string;
-  summary: string;
-  points: string[];
-}
-
 export interface Alum {
   id: string;
   name: string;
@@ -224,65 +216,6 @@ export const milestones: Milestone[] = [
     ],
     image: null,
   },
-];
-
-// ---- Eras ------------------------------------------------------------------
-
-export const eras: Era[] = [
-  {
-    id: "founding",
-    label: "Founding",
-    years: "[ADD YEARS]",
-    summary: "[ADD TWO OR THREE SENTENCES ON HOW AND WHY THE FUND STARTED]",
-    points: [
-      "Founded by: [ADD FOUNDER NAMES AND ROLES]",
-      "Starting capital: [ADD STARTING AMOUNT] from [ADD DONOR OR COLLEGE ALLOCATION]",
-      "Why it was created: [ADD REASON]",
-    ],
-  },
-  {
-    id: "growth",
-    label: "Growth",
-    years: "[ADD YEARS]",
-    summary: "[ADD TWO OR THREE SENTENCES ON HOW THE FUND GREW]",
-    points: [
-      "[ADD HOW THE FUND'S VALUE CHANGED OVER THESE YEARS]",
-      "[ADD STRATEGY CHANGES]",
-      "[ADD ADVISORS DURING THIS PERIOD]",
-    ],
-  },
-  {
-    id: "rebuild",
-    label: "Rebuild",
-    years: "2026",
-    summary:
-      "In April 2026 the portfolio was rebuilt after the fund was liquidated. [ADD WHY THE FUND WAS LIQUIDATED]",
-    points: [
-      "The tracker measures the current portfolio's returns from April 14, 2026.",
-      "[ADD WHAT CHANGED IN THE STRATEGY AT THE REBUILD]",
-      "[ADD WHO LED THE REBUILD]",
-    ],
-  },
-  {
-    id: "today",
-    label: "Today",
-    years: "2026 to now",
-    summary:
-      "The fund holds roughly $300K+ and is run by students in the Portfolio Management course, with Dr. Brad Andrew as faculty advisor.",
-    points: [
-      "Four strategy sleeves: VPIS, MOM, BHAC and HE.",
-      "Benchmark: 80% ACWI and 20% AGG.",
-      "Trades are proposed, voted on and recorded in the Eagle Fund Tracker.",
-    ],
-  },
-];
-
-// The sleeves shown under "Today". Add what each code stands for.
-export const sleeves: { code: string; name: string }[] = [
-  { code: "VPIS", name: "[ADD FULL NAME]" },
-  { code: "MOM", name: "Momentum" }, // as named in the tracker
-  { code: "BHAC", name: "Buy & Hold Asset Class" }, // as named in the tracker
-  { code: "HE", name: "[ADD FULL NAME]" },
 ];
 
 // ---- Alumni ----------------------------------------------------------------

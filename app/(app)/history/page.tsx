@@ -5,11 +5,9 @@ import {
   advisors,
   alumni,
   closing,
-  eras,
   fund,
   impactIntro,
   milestones,
-  sleeves,
   stats,
   studentLeaders,
   type Person,
@@ -18,7 +16,6 @@ import { getHoldingRows } from "@/lib/fund";
 import { getCashBalance, getSnapshots } from "@/lib/store";
 import { cn, EmptyState } from "@/components/ui";
 import { AlumniWall } from "@/components/history/AlumniWall";
-import { Eras } from "@/components/history/Eras";
 import { Fill } from "@/components/history/Fill";
 import { GrowthChart } from "@/components/history/GrowthChart";
 import { Reveal } from "@/components/history/Reveal";
@@ -38,7 +35,6 @@ const SECTIONS: NavSection[] = [
   { id: "numbers", label: "Numbers" },
   { id: "timeline", label: "Timeline" },
   { id: "growth", label: "Growth" },
-  { id: "eras", label: "Eras" },
   { id: "alumni", label: "Alumni" },
   { id: "leadership", label: "Leadership" },
   { id: "join", label: "Join" },
@@ -118,10 +114,6 @@ export default async function HistoryPage() {
               <EmptyState title="Fund values can't be loaded right now" hint="Try again in a minute." />
             )}
           </div>
-        </Section>
-
-        <Section id="eras" eyebrow="Eras of the fund" title="Four chapters">
-          <Eras eras={eras} sleeves={sleeves} />
         </Section>
 
         <Section id="alumni" eyebrow="Student impact" title="Where it took them" intro={impactIntro}>
