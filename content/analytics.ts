@@ -11,7 +11,7 @@
 // ============================================================================
 
 // ---- Benchmark ---------------------------------------------------------------
-// The IPS benchmark (IPS 5.1). Must add up to 1.
+// The IPS benchmark (Investment Policy, Section 4). Must add up to 1.
 export const BENCHMARK: { ticker: string; weight: number }[] = [
   { ticker: "ACWI", weight: 0.8 },
   { ticker: "AGG", weight: 0.2 },
@@ -182,15 +182,16 @@ export const FACTORS: FactorDef[] = [
   { id: "quality", label: "Quality", long: "QUAL", short: "SPY", meaning: "Positive: tilts to profitable, stable firms." },
 ];
 
-// ---- IPS limits --------------------------------------------------------------
-// The limits the IPS will set (Sections 3, 4 and 8). `null` means the IPS has
-// not decided the number yet; the page then shows the current reading with
-// "no limit set". Fill these in when the IPS is adopted.
+// ---- Risk limits -------------------------------------------------------------
+// Numeric limits the fund may choose to adopt. The Investment Policy does not
+// set any (it asks managers to avoid undue risk, Section 2). `null` means no
+// limit: the Limits tab then shows the reading with "no limit set". Put a
+// number here once the fund agrees one, and the tab starts checking it.
 export const IPS_LIMITS: {
-  maxPositionPct: number | null; // IPS 8.1: largest single position, % of fund
-  maxDrawdownPct: number | null; // IPS 3.2: fall from peak, %
-  maxTrackingErrorPct: number | null; // IPS 3.2: annualized, %
-  minCashPct: number | null; // IPS 8.4: cash floor, % of fund
+  maxPositionPct: number | null; // largest single position, % of fund
+  maxDrawdownPct: number | null; // fall from peak, %
+  maxTrackingErrorPct: number | null; // annualized, %
+  minCashPct: number | null; // cash floor, % of fund
 } = {
   maxPositionPct: null,
   maxDrawdownPct: null,

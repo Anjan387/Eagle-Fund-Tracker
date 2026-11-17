@@ -11,7 +11,7 @@ export interface IpsNavItem {
 }
 
 /**
- * Contents list for the IPS page. A sticky column beside the text on large
+ * Contents list for the Investment Policy page. A sticky column beside the text on large
  * screens, a sticky strip of chips on small ones. The section being read is
  * highlighted in both.
  */

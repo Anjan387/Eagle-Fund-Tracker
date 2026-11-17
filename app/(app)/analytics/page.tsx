@@ -1036,8 +1036,8 @@ function LimitsTab({ a }: { a: AnalyticsModel }) {
 
       <Card>
         <CardHeader
-          title="IPS limits"
-          description="The readings the Investment Policy Statement will set limits on. A limit shows here once its number is decided."
+          title="Risk limits"
+          description="Readings the fund could set limits on. A limit shows here once the fund adopts a number for it."
         />
         <div className="flex flex-col gap-3 px-5 py-5">
           <Table
@@ -1058,7 +1058,7 @@ function LimitsTab({ a }: { a: AnalyticsModel }) {
                   <th scope="row" className="px-3 py-2 text-left font-normal">
                     <span className="text-ink">{l.label}</span>
                     <span className="mt-0.5 block text-[11px] text-faint">
-                      {l.ips} · {l.detail}
+                      {l.detail}
                     </span>
                   </th>
                   <td className={cn(td, "font-medium text-ink")}>{l.value.toFixed(1)}%</td>
@@ -1067,7 +1067,7 @@ function LimitsTab({ a }: { a: AnalyticsModel }) {
                   </td>
                   <td className="px-3 py-2">
                     {l.limit == null ? (
-                      <Badge>To be decided</Badge>
+                      <Badge>No limit set</Badge>
                     ) : (
                       <Badge tone={breach ? "neg" : "pos"}>{breach ? "Breach" : "Within limit"}</Badge>
                     )}
@@ -1077,7 +1077,7 @@ function LimitsTab({ a }: { a: AnalyticsModel }) {
             })}
           </Table>
           <Note>
-            The IPS has not fixed these numbers yet (see the <Link href="/ips" className="text-brand hover:underline">IPS page</Link>).
+            The <Link href="/ips" className="text-brand hover:underline">Investment Policy</Link> does not set numeric limits for these; it asks managers to avoid undue risk (Section 2).
             The readings above are what a limit would be measured against: use them to choose sensible numbers, then
             enter the limits in IPS_LIMITS in content/analytics.ts and this table starts checking them.
           </Note>

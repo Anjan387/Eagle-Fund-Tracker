@@ -1,6 +1,6 @@
 import styles from "./history.module.css";
 
-// [ADD ...] on the Fund History page; the IPS page also uses [TO DECIDE] and a few blanks
+// [ADD ...] placeholders on the Fund History page (and a few other bracketed blanks)
 const PLACEHOLDER = /(\[(?:ADD|TO DECIDE|DATE|FOR|AGAINST|ABSTAIN|SIGNATURE)[^\]]*\])/;
 
 /** True for text that is nothing but an unfilled [ADD ...] placeholder. */

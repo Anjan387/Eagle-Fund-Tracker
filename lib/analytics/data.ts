@@ -156,7 +156,6 @@ export interface ProposalImpact {
 export interface LimitReading {
   id: string;
   label: string;
-  ips: string;
   /** current reading and limit, in % */
   value: number;
   limit: number | null;
@@ -698,12 +697,11 @@ async function build(windowKey: WindowKey): Promise<Analytics> {
     result: tradeImpact(base, { ticker: p.ticker, action: p.action, shares: p.shares, strategyId: p.strategyId }),
   }));
 
-  // ---- IPS limits ---------------------------------------------------------------------------------------
+  // ---- risk limits ---------------------------------------------------------------------------------------
   const limits: LimitReading[] = [
     {
       id: "position",
       label: "Largest single position",
-      ips: "IPS 8.1",
       value: now.largest.pct,
       limit: IPS_LIMITS.maxPositionPct,
       kind: "max",
@@ -712,7 +710,6 @@ async function build(windowKey: WindowKey): Promise<Analytics> {
     {
       id: "drawdown",
       label: "Drawdown from peak",
-      ips: "IPS 3.2",
       value: -fundPerf.currentDdPct,
       limit: IPS_LIMITS.maxDrawdownPct,
       kind: "max",
@@ -721,7 +718,6 @@ async function build(windowKey: WindowKey): Promise<Analytics> {
     {
       id: "te",
       label: "Tracking error vs benchmark",
-      ips: "IPS 3.2",
       value: risk.tePct,
       limit: IPS_LIMITS.maxTrackingErrorPct,
       kind: "max",
@@ -730,7 +726,6 @@ async function build(windowKey: WindowKey): Promise<Analytics> {
     {
       id: "cash",
       label: "Cash",
-      ips: "IPS 8.4",
       value: now.cashPct,
       limit: IPS_LIMITS.minCashPct,
       kind: "min",
