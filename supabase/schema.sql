@@ -262,7 +262,7 @@ insert into public.strategies (id, name, target_min_pct, target_max_pct) values
   ('st-asset',     'Buy & Hold Asset Class', 26, 36),
   ('st-value',     'Buy Hold & Value Play',  24, 33),
   ('st-momentum',  'Asset Momentum',         22, 28),
-  ('st-defensive', 'Hedge',                  15, 20);
+  ('st-defensive', 'Defensive',              15, 20);
 
 -- Both trailing-return figures are computed automatically (see
 -- computeReturns in lib/fund.ts); this row just holds the two optional
